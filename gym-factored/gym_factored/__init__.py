@@ -77,6 +77,6 @@ register(
 
 register(
     id='sixarms-v0',
-    entry_point='gym_factored.envs.river_swim:RiverSwimEnv',
+    entry_point='gym_factored.envs.sixarms:SixArmsEnv',
     max_episode_steps=1000
 )

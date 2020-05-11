@@ -1,7 +1,7 @@
 import gym
 import numpy as np
 
-env = gym.make("gym_factored:sixarms-v0")
+env = gym.make("gym_factored:river_swim-v0")
 ob = env.reset()
 
 def value_iteration(env, max_iterations = 100000, gamma = 0.9, delta = 1e-04):
