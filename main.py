@@ -4,7 +4,23 @@ import numpy as np
 env = gym.make("gym_factored:sixarms-v0")
 ob = env.reset()
 
-def value_iteration(env, max_iterations = 100000, gamma = 0.9, delta = 1e-04):
+def learn_online(env, max_iterations = 1, gamma = 0.9, delta = 1e-04 ):
+    Qold = np.zeros(env.nS)
+    Qnew = Qold.copy()
+    decoded_state = list(env.decode(ob))
+    assert ob == env.encode(*decoded_state)
+    while True:
+        action = env.action_space.sample()
+        ob, reward, done, _ = env.step(action)
+        decoded_state = list(env.decode(ob))
+        print(ob, decoded_state)
+        assert ob == env.encode(*decoded_state)
+        if done:
+            break
+    return Qnew, max_policy(env, Qnew, gamma)
+
+
+def value_iteration(env, max_iterations = 1, gamma = 0.9, delta = 1e-04):
     Qold = np.zeros(env.nS)
     Qnew = Qold.copy()
     for i in range(max_iterations):
@@ -21,7 +37,7 @@ def value_iteration(env, max_iterations = 100000, gamma = 0.9, delta = 1e-04):
             break
         else:
             Qold = Qnew.copy()
-    return max_policy(env, Qnew, gamma)
+    return Qnew, max_policy(env, Qnew, gamma)
 
 def max_policy(env, Q, gamma):
     best_actions = np.zeros(env.nS)
