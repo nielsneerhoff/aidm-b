@@ -4,6 +4,12 @@ from gym.envs.toy_text.discrete import DiscreteEnv
 LEFT = 0
 RIGHT = 1
 
+def left(s):
+    return max(s - 1, 0)
+
+def right(s, ns):
+    return min(s + 1, ns - 1)
+
 class RiverSwimEnv(DiscreteEnv):
     """
     This is a simple River Swim environment using the DiscreteEnv class
@@ -65,8 +71,6 @@ class RiverSwimEnv(DiscreteEnv):
     def render(self, mode='human'):
         pass
 
-def left(s):
-    return max(s - 1, 0)
-
-def right(s, ns):
-    return min(s + 1, ns - 1)
+    # def step(self, a):
+    #     state, reward, done, _ = super().step(a)
+    #     return state, reward, done
