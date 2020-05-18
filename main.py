@@ -6,8 +6,8 @@ from agent import MBIE, MBIE_EB
 env = gym.make("gym_factored:river-swim-v0")
 
 def learn_online(env, agent, max_episodes = 10, gamma = 0.9):
-    state = env.reset()
     for i in range(max_episodes):
+        state = env.reset()
         while True:
             old_state = state
             action = agent.select_action(state)
