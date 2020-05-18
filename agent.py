@@ -38,6 +38,7 @@ class MBIE(ModelBasedLearner):
     """
 
     def __init__(self, env, m, delta):
+
         self.CI_T = set()
         # Note: upper-bound of R is just R(s,a) + epsilon
         self.delta = delta
