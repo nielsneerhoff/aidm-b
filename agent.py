@@ -45,6 +45,8 @@ class MBIE(ModelBasedLearner):
         self.m = m
         super().__init__(env)
 
+
+
     def select_action(self, state):
         """
         Returns an action, selected based on the current state.
@@ -68,11 +70,31 @@ class MBIE_EB(ModelBasedLearner):
     MBIE-EB agent.
 
     """
+    def __init__(self, env, beta):
+        super().__init__(env)
+        self.beta = beta
+        self.Qold_est = np.zeros(env.nS, env.nA)
+        self.Qnew_est = Qold_est.copy()
+
+
 
     def select_action(self, state):
         """
         Returns an action, selected based on the current state.
- 
+        
         """
+
+        for action in range(env.nA):
+            intervalparam = self.beta / sqrt((self.n[state][action]))
+            T_hat_com = 0
+            for j in range(len(env.T[state][action])):
+                Qold_max = np.max(Qold_est[j])
+                T_hat_com += self.T[state][action][j]*Qold_max  
+
+            self.Qnew_est[state][action] = self.R[state][action] + self.gamma*T_hat_com + intervalparam 
+
+            self.Qold_est = self.Qnew_est
+    
+        return np.argmax(Qnew_est[state])
 
         # TO DO: This function should implement eq. 8 of the paper.
