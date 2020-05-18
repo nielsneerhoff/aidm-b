@@ -36,9 +36,26 @@ class ModelBasedLearner:
 
         return np.argmax(self.Q[state])
 
-    @abstractmethod
-    def update_value(self, state, action):
-        pass
+    def value_iteration(self, max_iterations, delta):
+        """
+        Perform value iteration based on current model.
+
+        """
+
+        Qnew = np.array(self.Q)
+        for i in range(max_iterations):
+            for state in range(self.env.nS):
+                for action in range(self.env.nA):
+                    Qnew[state][action] = self.q_value(state, action)
+            if i > 1000 and abs(np.sum(self.Q) - np.sum(Qnew)) < delta:
+                break
+            else:
+                self.Q = np.array(Qnew)
+        return self.Q
+
+    def max_policy(self):
+        return np.argmax(self.Q, axis = 1)
+
 
 class MBIE(ModelBasedLearner):
     """
@@ -71,9 +88,9 @@ class MBIE(ModelBasedLearner):
             (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta_t))
             / self.m)
 
-    def update_value(self, state, action):
+    def q_value(self, state, action):
         """
-        Updates the Q estimate of the current state action.
+        Returns the Q estimate of the current state action.
 
         """
 
@@ -91,8 +108,9 @@ class MBIE(ModelBasedLearner):
         current_T = current_T / np.linalg.norm(current_T, 1)
 
         # Update Q accordingly.
-        self.Q[state][action] = max_R + np.dot(
+        return max_R + np.dot(
             current_T, np.max(self.Q, axis = 1))
+
 
 class MBIE_EB(ModelBasedLearner):
     """
@@ -104,13 +122,13 @@ class MBIE_EB(ModelBasedLearner):
         self.beta = beta
         super().__init__(env, gamma)
 
-    def update_value(self, state, action):
+    def q_value(self, state, action):
         """
-        Updates the Q estimate of the current state action.
+        Returns the Q estimate of the current state action.
 
         """
 
-        self.Q[state][action] = self.R[state][action] + np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + + self.exploration_bonus(state, action)
+        return self.R[state][action] + np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))
