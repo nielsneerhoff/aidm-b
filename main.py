@@ -1,61 +1,25 @@
 import gym
 import numpy as np
 
+from agent import MBIE, MBIE_EB
+
 env = gym.make("gym_factored:river-swim-v0")
 
-def learn_online(env, agent, max_iterations = 100000, gamma = 0.9):
-    for episode in range(num_episodes):
-        state = env.reset()
-
-        print('---episode %d---' % episode)
-        renderit = False
-        if episode % 10 == 0:
-            renderit = True
-
-        for t in range(MAX_EPISODE_LENGTH):
-            if renderit:
-                env.render()
-            printing=False
-            if t % 500 == 499:
-                printing = True
-
-            if printing:
-                print('---stage %d---' % t)
-                agent.report()
-                print("state:", state)
-
+def learn_online(env, agent, max_episodes = 10, gamma = 0.9):
+    state = env.reset()
+    for i in range(max_episodes):
+        while True:
             old_state = state
             action = agent.select_action(state)
             new_state, reward, done, info = env.step(action)
-            if printing:
-                print("act:", action)
-                print("reward=%s" % reward)
-
             agent.process_experience(state, action, new_state, reward, done)
             if done:
-                print("Episode finished after {} timesteps".format(t + 1))
-                agent.set_next_to_terminal_state(old_state)
-                env.render()
-                agent.report()
-                number_of_steps[episode] = t
                 break
             state = new_state
-    # decoded_state = list(env.decode(ob))
-    # assert ob == env.encode(*decoded_state)
-    for i in range(max_iterations):
-        env.reset()
-        ob = env.reset()
-        while True:
-            action = env.action_space.sample()
-            ob, reward, done, _ = env.step(action)
-            # decoded_state = list(env.decode(ob))
-            # print(ob, decoded_state)
-            # assert ob == env.encode(*decoded_state)
-            if done:
-                break
-    return Qnew, max_policy(env, Qnew, gamma)
+    return agent.Q, max_policy(env, agent.Qnew, gamma)
 
-print(learn_online(env))
+agent = MBIE(env)
+print(learn_online(env, agent))
 
 def value_iteration(env, max_iterations = 1, gamma = 0.9, delta = 1e-04):
     Qold = np.zeros(env.nS)
