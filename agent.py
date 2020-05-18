@@ -92,7 +92,7 @@ class MBIE_EB(ModelBasedLearner):
                 #calculate the best action value from the new possible state
                 Qold_max = np.max(self.Qold_est[j])
                 #sum over the transition probabilties and use the Q
-                T_hat_com += self.T[state][action][j]*self.Qold_max  
+                T_hat_com += self.T[state][action][j]*Qold_max  
 
             self.Qnew_est[state][action] = self.R[state][action] + self.gamma *T_hat_com + intervalparam
 
