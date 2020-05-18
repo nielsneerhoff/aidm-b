@@ -1,8 +1,4 @@
-import gym
 import numpy as np
-from sklearn.preprocessing import normalize
-
-from random import random, choice
 
 class ModelBasedLearner:
     def __init__(self, env):
