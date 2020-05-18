@@ -56,7 +56,6 @@ class ModelBasedLearner:
     def max_policy(self):
         return np.argmax(self.Q, axis = 1)
 
-
 class MBIE(ModelBasedLearner):
     """
     MBIE agent.
@@ -110,7 +109,6 @@ class MBIE(ModelBasedLearner):
         # Update Q accordingly.
         return max_R + np.dot(
             current_T, np.max(self.Q, axis = 1))
-
 
 class MBIE_EB(ModelBasedLearner):
     """
