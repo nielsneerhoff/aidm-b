@@ -3,6 +3,8 @@ import numpy as np
 class ModelBasedLearner:
     def __init__(self, env):
 
+        self.env = env
+
         # Stores current state value estimates.
         self.Q = np.zeros((env.nS, env.nA))
 
@@ -35,6 +37,13 @@ class MBIE(ModelBasedLearner):
 
     """
 
+    def __init__(self, env, m, delta):
+        self.CI_T = set()
+        # Note: upper-bound of R is just R(s,a) + epsilon
+        self.delta = delta
+        self.m = m
+        super().__init__(env)
+
     def select_action(self, state):
         """
         Returns an action, selected based on the current state.
@@ -42,6 +51,16 @@ class MBIE(ModelBasedLearner):
         """
 
         # TO DO: This function should implement eq. 7 of the paper.
+
+    def epsilon(self, state, action):
+        """
+        Returns the epsilon determining confidence interval for s and a.
+
+        """
+
+        return np.sqrt(
+            (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta))
+            / self.m)
 
 class MBIE_EB(ModelBasedLearner):
     """
