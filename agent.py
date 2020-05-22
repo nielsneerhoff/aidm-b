@@ -5,6 +5,9 @@ class ModelBasedLearner:
 
         self.env = env
 
+        # Stores gamma
+        self.gamma = gamma
+
         # Stores current state value estimates.
         self.Q = np.ones((env.nS, env.nA)) / (1 - gamma) # Optimistic init.
 
@@ -23,7 +26,7 @@ class ModelBasedLearner:
 
         # Increment the # times s, a, s' was observed.
         self.n[state][action][next_state] += 1
-
+        
         # Adjust mean probability and reward estimate accordingly.
         self.T[state][action] = self.n[state][action] / np.sum(self.n[state][action])
         self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
@@ -118,40 +121,17 @@ class MBIE_EB(ModelBasedLearner):
 
     """
     def __init__(self, env, beta, gamma):
-        super().__init__(env)
-        self.beta = beta
-        self.gamma = gamma
-        self.Qold_est = np.zeros(env.nS, env.nA)
-        self.Qnew_est = self.Qold_est.copy()
-        
-
-
-
-    def __init__(self, env, gamma, beta):
-        self.beta = beta
         super().__init__(env, gamma)
+        self.beta = beta
+        
 
     def q_value(self, state, action):
         """
         Returns the Q estimate of the current state action.
 
         """
-        for action in range(self.env.nA):
-            intervalparam = self.beta / np.sqrt((self.n[state][action]))
-            T_hat_com = 0
-            for j in range(len(self.env.T[state][action])):
-                #calculate the best action value from the new possible state
-                Qold_max = np.max(self.Qold_est[j])
-                #sum over the transition probabilties and use the Q
-                T_hat_com += self.T[state][action][j]*Qold_max  
-
-            self.Qnew_est[state][action] = self.R[state][action] + self.gamma *T_hat_com + intervalparam
-
-        self.Qold_est = self.Qnew_est
-    
-        return np.argmax(self.Qnew_est[state])
-
-        return self.R[state][action] + np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
+        
+        return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))

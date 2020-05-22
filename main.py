@@ -20,7 +20,8 @@ def learn_online(
             state = new_state
     return agent.Q, agent.max_policy()
 
-agent = MBIE_EB(env, 0.9, 0.3)
+agent = MBIE_EB(env, 0.4, 0.95)
+# agent = MBIE(env, 0.95, )
 print(learn_online(env, agent))
 
 def value_iteration(env, max_iterations = 10000, gamma = 0.9, delta = 1e-04):
