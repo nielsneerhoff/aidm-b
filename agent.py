@@ -8,6 +8,7 @@ class ModelBasedLearner:
 
         # Stores gamma
         self.gamma = gamma
+
         # Stores current state value estimates.
         self.Q = np.ones((env.nS, env.nA))
 
