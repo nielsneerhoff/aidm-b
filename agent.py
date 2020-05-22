@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import random
 
 class ModelBasedLearner:
     def __init__(self, env, gamma):
@@ -7,15 +8,14 @@ class ModelBasedLearner:
 
         # Stores gamma
         self.gamma = gamma
-
         # Stores current state value estimates.
-        self.Q = np.ones((env.nS, env.nA)) / (1 - gamma) # Optimistic init.
+        self.Q = np.ones((env.nS, env.nA))
 
         # Stores # times s, a , s' was observed.
-        self.n = np.ones((env.nS, env.nA, env.nS))
+        self.n = np.zeros((env.nS, env.nA, env.nS))
 
         # Stores transition probability estimates and reward estimates.
-        self.T = np.zeros((env.nS, env.nA, env.nS))
+        self.T = np.ones((env.nS, env.nA, env.nS)) / (env.nS)
         self.R = np.zeros((env.nS, env.nA))
 
     def process_experience(self, state, action, next_state, reward, done):
@@ -26,7 +26,7 @@ class ModelBasedLearner:
 
         # Increment the # times s, a, s' was observed.
         self.n[state][action][next_state] += 1
-        
+
         # Adjust mean probability and reward estimate accordingly.
         self.T[state][action] = self.n[state][action] / np.sum(self.n[state][action])
         self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
@@ -34,7 +34,7 @@ class ModelBasedLearner:
     def select_action(self, state):
         """
         Returns an action, selected based on the current state.
- 
+
         """
 
         return np.argmax(self.Q[state])
@@ -45,7 +45,7 @@ class ModelBasedLearner:
 
         """
 
-        Qnew = np.array(self.Q)
+        Qnew = np.zeros((self.env.nS, self.env.nA))
         for i in range(max_iterations):
             for state in range(self.env.nS):
                 for action in range(self.env.nA):
@@ -59,6 +59,13 @@ class ModelBasedLearner:
     def max_policy(self):
         return np.argmax(self.Q, axis = 1)
 
+    def reset(self):
+        self.env.reset()
+        self.Q = np.zeros((self.env.nS, self.env.nA))
+        if random.uniform(0, 1) > 0.5:
+            return 1
+        else:
+            return 2
 
 class MBIE(ModelBasedLearner):
     """
@@ -67,7 +74,6 @@ class MBIE(ModelBasedLearner):
     """
 
     def __init__(self, env, gamma, m, delta_t, delta_r):
-
         self.delta_t = delta_t
         self.delta_r = delta_r
         self.m = m
@@ -97,41 +103,50 @@ class MBIE(ModelBasedLearner):
 
         """
 
-        # Pick right-tail upper confidence bound on reward.
-        max_R = self.R[state][action] + self.epsilon_r(state, action)
+        # Base case.
+        if np.sum(self.n[state][action]) > self.env.nS:
+            epsilon_r = self.epsilon_r(state, action)
+            epsilon_t = self.epsilon_t(state, action)
 
-        # Find transition probability distribution that maximized expected Q value.
-        current_T = np.array(self.T[state][action]) # Deep copy.
-        max_next_state = np.argmax(self.Q)
-        epsilon_t = self.epsilon_t(state, action)
-        current_T[max_next_state] += epsilon_t / 2
-        while np.linalg.norm(current_T, 1) > 1:
-            min_next_state = np.argmin(self.Q)
-            current_T[min_next_state] -= self.T[state][action][min_next_state]
-        current_T = current_T / np.linalg.norm(current_T, 1)
+            # Pick right-tail upper confidence bound on reward.
+            max_R = self.R[state][action] + epsilon_r
 
-        # Update Q accordingly.
-        return max_R + np.dot(
-            current_T, np.max(self.Q, axis = 1))
+            # Find transition probability distribution that maximized expected Q value.
+            current_T = np.array(self.T[state][action]) # Deep copy.
+            max_next_state = np.argmax(self.Q)
+            current_T[max_next_state] += epsilon_t / 2
+            states_with_non_zero_prob = np.where(current_T > 0)[0]
+            while np.linalg.norm(current_T, 1) > 1:
+                min_next_state = np.argmin(self.Q[states_with_non_zero_prob])
+                current_T[min_next_state] -= self.T[state][action][min_next_state]
+            current_T = current_T / np.linalg.norm(current_T, 1)
 
+            # Update Q accordingly.
+            return max_R + self.gamma * np.dot(
+                current_T, np.max(self.Q, axis = 1))
+        else:
+            return 2**31
 
 class MBIE_EB(ModelBasedLearner):
     """
     MBIE-EB agent.
 
     """
+
     def __init__(self, env, beta, gamma):
-        super().__init__(env, gamma)
+        super(MBIE_EB, self).__init__(env, gamma)
         self.beta = beta
-        
 
     def q_value(self, state, action):
         """
         Returns the Q estimate of the current state action.
 
         """
-        
-        return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
+
+        if np.sum(self.n[state][action]) > 0:
+            return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
+        else:
+            return 2**31
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))

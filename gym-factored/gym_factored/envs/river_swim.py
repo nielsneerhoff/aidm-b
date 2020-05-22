@@ -63,7 +63,7 @@ class RiverSwimEnv(DiscreteEnv):
         t[0, RIGHT, 0] = 0.7
         t[0, RIGHT, right(0, ns)] = 0.3
 
-        t[0, LEFT, left(0)] = 1
+        t[ns - 1, LEFT, left(ns - 1)] = 1
         t[ns - 1, RIGHT, left(ns - 1)] = 0.7
         t[ns - 1, RIGHT, ns - 1] = 0.3
         return t
@@ -72,5 +72,5 @@ class RiverSwimEnv(DiscreteEnv):
         pass
 
     # def step(self, a):
-    #     state, reward, done, _ = super().step(a)
+    #     res = super().step(a)
     #     return state, reward, done

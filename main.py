@@ -3,25 +3,22 @@ import numpy as np
 
 from agent import MBIE, MBIE_EB
 
-env = gym.make("gym_factored:sixarms-v0")
+env = gym.make("gym_factored:river-swim-v0")
 
 def learn_online(
-    env, agent, max_episodes = 10, gamma = 0.9, max_iterations = 10000, delta = 1e-04):
+    env, agent, max_episodes = 10000, gamma = 0.95, max_iterations = 1000, delta = 1e-02):
+    state = env.reset()
     for i in range(max_episodes):
-        state = env.reset()
-        while True:
-            old_state = state
-            action = agent.select_action(state)
-            new_state, reward, done, info = env.step(action)
-            agent.process_experience(state, action, new_state, reward, done)
+        action = agent.select_action(state)
+        new_state, reward, done, info = env.step(action)
+        agent.process_experience(state, action, new_state, reward, done)
+        if i % 10 == 0:
             agent.value_iteration(max_iterations, delta)
-            if done:
-                break
-            state = new_state
+            print('Iteration', i, agent.max_policy())
+        state = new_state
     return agent.Q, agent.max_policy()
 
-agent = MBIE_EB(env, 0.4, 0.95)
-# agent = MBIE(env, 0.95, )
+agent = MBIE(env, 0.95, 10, 0.1, 0.1)
 print(learn_online(env, agent))
 
 def value_iteration(env, max_iterations = 10000, gamma = 0.9, delta = 1e-04):
