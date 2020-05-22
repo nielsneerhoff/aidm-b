@@ -117,6 +117,15 @@ class MBIE_EB(ModelBasedLearner):
     MBIE-EB agent.
 
     """
+    def __init__(self, env, beta, gamma):
+        super().__init__(env)
+        self.beta = beta
+        self.gamma = gamma
+        self.Qold_est = np.zeros(env.nS, env.nA)
+        self.Qnew_est = self.Qold_est.copy()
+        
+
+
 
     def __init__(self, env, gamma, beta):
         self.beta = beta
@@ -127,6 +136,20 @@ class MBIE_EB(ModelBasedLearner):
         Returns the Q estimate of the current state action.
 
         """
+        for action in range(self.env.nA):
+            intervalparam = self.beta / np.sqrt((self.n[state][action]))
+            T_hat_com = 0
+            for j in range(len(self.env.T[state][action])):
+                #calculate the best action value from the new possible state
+                Qold_max = np.max(self.Qold_est[j])
+                #sum over the transition probabilties and use the Q
+                T_hat_com += self.T[state][action][j]*Qold_max  
+
+            self.Qnew_est[state][action] = self.R[state][action] + self.gamma *T_hat_com + intervalparam
+
+        self.Qold_est = self.Qnew_est
+    
+        return np.argmax(self.Qnew_est[state])
 
         return self.R[state][action] + np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
 
