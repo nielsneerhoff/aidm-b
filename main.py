@@ -23,10 +23,10 @@ def learn_online(
 
 gamma = 0.95
 
-# rmax = 10000
+rmax = 10000
 # c = 0.02
 # # c = 0.4
-# beta = c * rmax
+# beta = c * env.rmax
 # agent = MBIE_EB(env, beta, gamma)
 
 A = 0.3

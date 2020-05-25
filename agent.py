@@ -88,26 +88,26 @@ class MBIE(ModelBasedLearner):
         """
         #Delta's used for experiment here delta_r = A
         if np.sum(self.n[state][action]) > 0:
-            # return np.sqrt(np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
             return self.delta_r * (self.env.rmax/np.sqrt(np.sum(self.n[state][action])))
-        # return  np.sqrt(np.log(2 / self.delta_r) / 2
         return  self.delta_r * self.env.rmax
+
+        # if np.sum(self.n[state][action]) > 0:
+        #     return np.sqrt(np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
+        # return  np.sqrt(np.log(2 / self.delta_r) / 2
 
     def epsilon_t(self, state, action):
         """
         Returns the epsilon determining confidence interval for the transition probability distribution (eq. 5 of paper).
 
         """
-
-        # return np.sqrt(
-        #     (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta_t))
-        #     / self.m)
-
         #Delta's used for experiment here delta_t = B
         if np.sum(self.n[state][action]) > 0:
             return self.delta_t * (1/np.sqrt(np.sum(self.n[state][action])))
         return  self.delta_t
 
+        # return np.sqrt(
+        #     (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta_t))
+        #     / self.m)
 
     def q_value(self, state, action):
         """

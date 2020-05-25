@@ -17,7 +17,7 @@ class RiverSwimEnv(DiscreteEnv):
     """
 
     def __init__(self):
-        rmax = 10000
+        self.rmax = 10000
         ns = 6
         na = 2  # left and right
         # The first and last states are terminal states
