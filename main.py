@@ -37,7 +37,7 @@ agent = MBIE(env, gamma, maxsize, B, A)
 
 agent = MBIE(env, 0.95, 10, 0.5, 0.5)
 # agent = MBIE_EB(env, 40000, 0.95)
-pseudo_env = PseudoEnv(env, 0.2)
+pseudo_env = PseudoEnv(env)
 # expert = BoundedParameterExpert(pseudo_env, 0.95)
 # print(learn_online(env, agent, expert))
 print(learn_online(env, agent))
