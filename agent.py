@@ -12,7 +12,8 @@ class ModelBasedLearner:
         self.gamma = gamma
 
         # Stores current state value estimates.
-        self.Q = np.ones((env.nS, env.nA))
+        # self.Q = np.ones((env.nS, env.nA))
+        self.Q = np.full((env.nS, env.nA), 1 / (1 - gamma))
 
         # Stores # times s, a , s' was observed.
         self.n = np.zeros((env.nS, env.nA, env.nS))
@@ -53,7 +54,7 @@ class ModelBasedLearner:
             for state in range(self.env.nS):
                 for action in range(self.env.nA):
                     Qnew[state][action] = self.q_value(state, action)
-            if i > 1000 and np.abs(np.sum(self.Q) - np.sum(Qnew)) < delta:
+            if np.abs(np.sum(self.Q) - np.sum(Qnew)) < delta:
                 break
             self.Q = np.array(Qnew)
         return self.Q
@@ -61,13 +62,6 @@ class ModelBasedLearner:
     def max_policy(self):
         return np.argmax(self.Q, axis = 1)
 
-    def reset(self):
-        self.env.reset()
-        self.Q = np.zeros((self.env.nS, self.env.nA))
-        if random.uniform(0, 1) > 0.5:
-            return 1
-        else:
-            return 2
 
 class MBIE(ModelBasedLearner):
     """
@@ -75,11 +69,11 @@ class MBIE(ModelBasedLearner):
 
     """
 
-    def __init__(self, env, gamma, m, delta_t, delta_r):
-        self.delta_t = delta_t
-        self.delta_r = delta_r
-        self.m = m
+    def __init__(self, env, gamma, m, A, B):
         super().__init__(env, gamma)
+        self.m = m
+        self.A = A
+        self.B = B
 
     def epsilon_r(self, state, action):
         """
@@ -87,17 +81,19 @@ class MBIE(ModelBasedLearner):
 
         """
 
-        return np.sqrt(np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
+        if np.sum(self.n[state][action]) > 0:
+            return self.A * (self.env.r_max/np.sqrt(np.sum(self.n[state][action])))
+        return  self.A * self.env.r_max
 
     def epsilon_t(self, state, action):
         """
         Returns the epsilon determining confidence interval for the transition probability distribution (eq. 5 of paper).
 
         """
-
-        return np.sqrt(
-            (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta_t))
-            / self.m)
+        
+        if np.sum(self.n[state][action]) > 0:
+            return self.B * (1/np.sqrt(np.sum(self.n[state][action])))
+        return  self.B
 
     def q_value(self, state, action):
         """
@@ -105,36 +101,34 @@ class MBIE(ModelBasedLearner):
 
         """
 
-        if np.sum(self.n[state][action]) > 0:
+        # Pick right-tail upper confidence bound on reward.
+        epsilon_r = self.epsilon_r(state, action)
+        max_R = self.R[state][action] + epsilon_r
+            
+        # Find CI probability distribution maximizing expected Q value.
+        current_T = self.T[state][action].copy() # Deep copy.
+        max_next_state = np.argmax(np.max(self.Q, axis = 1))
+        epsilon_t = self.epsilon_t(state, action)
+        current_T[max_next_state] += epsilon_t / 2
 
-            # Pick right-tail upper confidence bound on reward.
-            epsilon_r = self.epsilon_r(state, action)
-            max_R = self.R[state][action] + epsilon_r
-                
-            # Find CI probability distribution maximizing expected Q value.
-            current_T = self.T[state][action].copy() # Deep copy.
-            max_next_state = np.argmax(np.max(self.Q, axis = 1))
-            epsilon_t = self.epsilon_t(state, action)
-            current_T[max_next_state] += epsilon_t / 2
+        removed = 0 # Counts how much probability is removed.
+        while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
+            min_next_state = None
+            min_value = np.inf
+            for s, values in enumerate(self.Q):
+                if current_T[s] > 0 and np.max(values) < min_value:
+                    min_next_state = s
+                    min_value = np.max(values)
+            remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
+            current_T[min_next_state] -= remove
+            removed += remove
 
-            removed = 0 # Counts how much probability is removed.
-            while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
-                min_next_state = None
-                min_value = np.inf
-                for s, values in enumerate(self.Q):
-                    if current_T[s] > 0 and np.max(values) < min_value:
-                        min_next_state = s
-                        min_value = np.max(values)
-                remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
-                current_T[min_next_state] -= remove
-                removed += remove
+        current_T = current_T / np.linalg.norm(current_T, 1)
 
-            current_T = current_T / np.linalg.norm(current_T, 1)
+        # Update Q accordingly.
+        return max_R + self.gamma * np.dot(current_T, np.max(self.Q, axis = 1))
 
-            # Update Q accordingly.
-            return max_R + self.gamma * np.dot(current_T, np.max(self.Q, axis = 1))
-        else:
-            return maxsize / 2
+
 
 class MBIE_EB(ModelBasedLearner):
     """
@@ -143,7 +137,7 @@ class MBIE_EB(ModelBasedLearner):
     """
 
     def __init__(self, env, beta, gamma):
-        super(MBIE_EB, self).__init__(env, gamma)
+        super().__init__(env, gamma)
         self.beta = beta
 
     def q_value(self, state, action):
@@ -152,10 +146,14 @@ class MBIE_EB(ModelBasedLearner):
 
         """
 
-        if np.sum(self.n[state][action]) > 0:
-            return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
-        else:
-            return maxsize / 2
+        return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
 
     def exploration_bonus(self, state, action):
-        return self.beta / np.sqrt(np.sum(self.n[state][action]))
+        """
+        Returns exploration bonus, beta / n(s,a)
+
+        """
+
+        if np.sum(self.n[state][action]) > 0:
+            return self.beta / np.sqrt(np.sum(self.n[state][action]))
+        return self.beta
