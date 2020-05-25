@@ -1,6 +1,8 @@
 import numpy as np
 from numpy import random
 
+from sys import maxsize
+
 class ModelBasedLearner:
     def __init__(self, env, gamma):
 
@@ -13,7 +15,7 @@ class ModelBasedLearner:
         self.Q = np.ones((env.nS, env.nA))
 
         # Stores # times s, a , s' was observed.
-        self.n = np.zeros((env.nS, env.nA, env.nS))
+        self.n = np.ones((env.nS, env.nA, env.nS))
 
         # Stores transition probability estimates and reward estimates.
         self.T = np.ones((env.nS, env.nA, env.nS)) / (env.nS)
@@ -51,10 +53,9 @@ class ModelBasedLearner:
             for state in range(self.env.nS):
                 for action in range(self.env.nA):
                     Qnew[state][action] = self.q_value(state, action)
-            if i > 1000 and abs(np.sum(self.Q) - np.sum(Qnew)) < delta:
+            if i > 1000 and np.abs(np.sum(self.Q) - np.sum(Qnew)) < delta:
                 break
-            else:
-                self.Q = np.array(Qnew)
+            self.Q = np.array(Qnew)
         return self.Q
 
     def max_policy(self):
@@ -104,29 +105,38 @@ class MBIE(ModelBasedLearner):
 
         """
 
-        # Base case.
-        if np.sum(self.n[state][action]) > self.env.nS:
-            epsilon_r = self.epsilon_r(state, action)
-            epsilon_t = self.epsilon_t(state, action)
+        if np.sum(self.n[state][action]) > 0:
 
             # Pick right-tail upper confidence bound on reward.
+            epsilon_r = self.epsilon_r(state, action)
             max_R = self.R[state][action] + epsilon_r
 
-            # Find transition probability distribution that maximized expected Q value.
-            current_T = np.array(self.T[state][action]) # Deep copy.
-            max_next_state = np.argmax(self.Q)
+            # Find CI probability distribution maximizing expected Q value.
+            current_T = self.T[state][action].copy() # Deep copy.
+            max_next_state = np.argmax(np.max(self.Q, axis = 1))
+            epsilon_t = self.epsilon_t(state, action)
             current_T[max_next_state] += epsilon_t / 2
-            states_with_non_zero_prob = np.where(current_T > 0)[0]
-            while np.linalg.norm(current_T, 1) > 1:
-                min_next_state = np.argmin(self.Q[states_with_non_zero_prob])
-                current_T[min_next_state] -= self.T[state][action][min_next_state]
+
+            removed = 0 # Counts how much probability is removed.
+            # print(np.count_nonzero(current_T))
+            while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
+                # print('\t', np.count_nonzero(current_T))
+                min_next_state = None
+                min_value = np.inf
+                for s, values in enumerate(self.Q):
+                    if current_T[s] > 0 and np.max(values) < min_value:
+                        min_next_state = s
+                        min_value = np.max(values)
+                remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
+                current_T[min_next_state] -= remove
+                removed += remove
+
             current_T = current_T / np.linalg.norm(current_T, 1)
 
             # Update Q accordingly.
-            return max_R + self.gamma * np.dot(
-                current_T, np.max(self.Q, axis = 1))
+            return max_R + self.gamma * np.dot(current_T, np.max(self.Q, axis = 1))
         else:
-            return 2**31
+            return maxsize
 
 class MBIE_EB(ModelBasedLearner):
     """
@@ -147,7 +157,7 @@ class MBIE_EB(ModelBasedLearner):
         if np.sum(self.n[state][action]) > 0:
             return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
         else:
-            return 2**31
+            return maxsize
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))

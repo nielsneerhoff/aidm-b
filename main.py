@@ -12,13 +12,13 @@ def learn_online(
         action = agent.select_action(state)
         new_state, reward, done, info = env.step(action)
         agent.process_experience(state, action, new_state, reward, done)
-        if i % 10 == 0:
-            agent.value_iteration(max_iterations, delta)
-            print('Iteration', i, agent.max_policy())
+        agent.value_iteration(max_iterations, delta)
+        print('Iteration', i, '\t', agent.max_policy())
         state = new_state
     return agent.Q, agent.max_policy()
 
-agent = MBIE(env, 0.95, 10, 0.1, 0.1)
+agent = MBIE(env, 0.95, 1, 1, 1)
+# agent = MBIE_EB(env, 40000, 0.95)
 print(learn_online(env, agent))
 
 def value_iteration(env, max_iterations = 10000, gamma = 0.9, delta = 1e-04):
