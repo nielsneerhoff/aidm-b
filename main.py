@@ -18,7 +18,7 @@ def learn_online(
         state = new_state
     return agent.Q, agent.max_policy(), agent.T
 
-agent = MBIE(env, 0.95, 10, 0.25, 0.25)
+agent = MBIE(env, 0.95, 10, 0.5, 0.5)
 # agent = MBIE_EB(env, 40000, 0.95)
 print(learn_online(env, agent))
 
