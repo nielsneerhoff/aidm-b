@@ -13,12 +13,11 @@ def learn_online(
     # Compute the best policy based on expert model.
     expert.value_iteration(max_iterations, delta)
     for i in range(max_episodes):
-        action = expert.select_action(state)
+        action = expert.select_action(state, mode = 'pessimistic')
         new_state, reward, done, info = env.step(action)
         agent.process_experience(state, action, new_state, reward, done)
-        if i % 100 == 0:
-            agent.value_iteration(max_iterations, delta)
-            print('Iteration', i, '\t', agent.max_policy())
+        agent.value_iteration(max_iterations, delta)
+        print('Iteration', i, '\t', agent.max_policy())
         state = new_state
     return agent.Q, agent.max_policy(), agent.T
 
