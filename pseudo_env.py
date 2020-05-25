@@ -21,7 +21,7 @@ class PseudoEnv(DiscreteEnv):
             assert rewards.shape == (env.nS, env.nA)
             self.R = np.array(rewards)
         else:
-            self.R = self.expected_rewards(env)
+            self.R = self._expected_rewards(env)
 
         # Expert could give offset, measure of uncertainty on trans. prob.
         # If not provided, use the trans. prob. upper and lower variant.

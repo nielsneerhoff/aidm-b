@@ -63,7 +63,6 @@ class ModelBasedLearner:
 
     def reset(self):
         self.env.reset()
-        self.Q = np.zeros((self.env.nS, self.env.nA))
         if random.uniform(0, 1) > 0.5:
             return 1
         else:
@@ -115,13 +114,21 @@ class MBIE(ModelBasedLearner):
 
         """
 
-        # if np.sum(self.n[state][action]) > 0:
-
-            # Pick right-tail upper confidence bound on reward.
+        # Pick right-tail upper confidence bound on reward.
         epsilon_r = self.epsilon_r(state, action)
         max_R = self.R[state][action] + epsilon_r
-            
-        # Find CI probability distribution maximizing expected Q value.
+        
+        T_high = upper_transition_distribution(state, action)
+
+        # Update Q accordingly.
+        return max_R + self.gamma * np.dot(T_high, np.max(self.Q, axis = 1))
+
+    def upper_transition_distribution(self, state, action):
+        """
+        Finds upper-bound CI probability distribution maximizing expected Q value for state and action.
+
+        """
+
         current_T = self.T[state][action].copy() # Deep copy.
         max_next_state = np.argmax(np.max(self.Q, axis = 1))
         epsilon_t = self.epsilon_t(state, action)
@@ -139,12 +146,15 @@ class MBIE(ModelBasedLearner):
             current_T[min_next_state] -= remove
             removed += remove
 
-        current_T = current_T / np.linalg.norm(current_T, 1)
+        return current_T / np.linalg.norm(current_T, 1)
 
-        # Update Q accordingly.
-        return max_R + self.gamma * np.dot(current_T, np.max(self.Q, axis = 1))
-        # else:
-        #     return maxsize / 2
+    def lower_transition_distribution(self, state, action):
+        """
+        Finds lower-bound CI probability distribution minimizing expected Q value for state and action.
+
+        """
+
+        pass
 
 class MBIE_EB(ModelBasedLearner):
     """
