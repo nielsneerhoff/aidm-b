@@ -13,7 +13,7 @@ def learn_online(
     state = env.reset()
     cum_reward = 0
     for i in range(max_episodes):
-        action = expert.select_action(state, mode = 'pessimistic')
+        action = agent.select_action(state)
         new_state, reward, done, info = env.step(action)
         agent.process_experience(state, action, new_state, reward, done)
         cum_reward += reward
@@ -38,5 +38,6 @@ agent = MBIE(env, gamma, maxsize, B, A)
 agent = MBIE(env, 0.95, 10, 0.5, 0.5)
 # agent = MBIE_EB(env, 40000, 0.95)
 pseudo_env = PseudoEnv(env, 0.2)
-expert = BoundedParameterExpert(pseudo_env, 0.95)
-print(learn_online(env, agent, expert))
+# expert = BoundedParameterExpert(pseudo_env, 0.95)
+# print(learn_online(env, agent, expert))
+print(learn_online(env, agent))
