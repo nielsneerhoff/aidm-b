@@ -17,6 +17,7 @@ class RiverSwimEnv(DiscreteEnv):
     """
 
     def __init__(self):
+        rmax = 10000
         ns = 6
         na = 2  # left and right
         # The first and last states are terminal states
@@ -25,19 +26,20 @@ class RiverSwimEnv(DiscreteEnv):
         terminal_states[ns - 1] = True
 
         t = self.get_transition_function(na, ns)
+        starting_states = [1, 2]
 
         isd = np.zeros(ns)
         p = {s: {a: [] for a in range(na)} for s in range(ns)}
         for s in range(ns):
-            if not terminal_states[s]:
+            if s in starting_states:
                 isd[s] = 1
             for a in range(na):
                 for new_state in range(ns):
                     transition_prob = t[s, a, new_state]
                     if transition_prob > 0:
-                        if new_state == ns - 1:
+                        if s == ns -1 & new_state == ns - 1:
                             reward = 10000
-                        elif new_state == 0:
+                        elif s == 0 & new_state == 0:
                             reward = 5
                         else:
                             reward = 0
