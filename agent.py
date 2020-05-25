@@ -15,7 +15,7 @@ class ModelBasedLearner:
         self.Q = np.ones((env.nS, env.nA))
 
         # Stores # times s, a , s' was observed.
-        self.n = np.ones((env.nS, env.nA, env.nS))
+        self.n = np.zeros((env.nS, env.nA, env.nS))
 
         # Stores transition probability estimates and reward estimates.
         self.T = np.ones((env.nS, env.nA, env.nS)) / (env.nS)
@@ -110,7 +110,7 @@ class MBIE(ModelBasedLearner):
             # Pick right-tail upper confidence bound on reward.
             epsilon_r = self.epsilon_r(state, action)
             max_R = self.R[state][action] + epsilon_r
-
+                
             # Find CI probability distribution maximizing expected Q value.
             current_T = self.T[state][action].copy() # Deep copy.
             max_next_state = np.argmax(np.max(self.Q, axis = 1))
@@ -118,9 +118,7 @@ class MBIE(ModelBasedLearner):
             current_T[max_next_state] += epsilon_t / 2
 
             removed = 0 # Counts how much probability is removed.
-            # print(np.count_nonzero(current_T))
             while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
-                # print('\t', np.count_nonzero(current_T))
                 min_next_state = None
                 min_value = np.inf
                 for s, values in enumerate(self.Q):
@@ -136,7 +134,7 @@ class MBIE(ModelBasedLearner):
             # Update Q accordingly.
             return max_R + self.gamma * np.dot(current_T, np.max(self.Q, axis = 1))
         else:
-            return maxsize
+            return maxsize / 2
 
 class MBIE_EB(ModelBasedLearner):
     """
@@ -157,7 +155,7 @@ class MBIE_EB(ModelBasedLearner):
         if np.sum(self.n[state][action]) > 0:
             return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
         else:
-            return maxsize
+            return maxsize / 2
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))
