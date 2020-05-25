@@ -80,3 +80,9 @@ register(
     entry_point='gym_factored.envs.sixarms:SixArmsEnv',
     max_episode_steps=1000
 )
+
+register(
+    id='',
+    entry_point='gym_factored.envs.optpes:OptPes',
+    max_episode_steps=1000
+)
