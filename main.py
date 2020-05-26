@@ -18,7 +18,7 @@ def learn_online(env, agent, mediator):
         #### Start new ####
         # agent_model = agent.learned_model()
         # action = mediator.select_action(state, agent_model)
-        #### End new ####
+        ##### End new #####
 
         action = agent.select_action(state)
         new_state, reward, done, info = env.step(action)
@@ -47,6 +47,6 @@ agent = MBIE(env, maxsize, B, A)
 expert_model = PseudoEnv(env) # Initializes expert env (=model).
 expert = BoundedParameterExpert(expert_model) # Intializes alg for dealing with model.
 mediator = Mediator(expert_model) # Start value iterating in expert model only if iterate = True is passed.
-#### End new ####
+##### End new #####
 
 print(learn_online(env, agent, mediator))
