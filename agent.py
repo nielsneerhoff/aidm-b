@@ -5,13 +5,12 @@ from sys import maxsize
 
 from pseudo_env import PseudoEnv
 
+from utils import GAMMA
+
 class ModelBasedLearner:
-    def __init__(self, env, gamma):
+    def __init__(self, env):
 
         self.env = env
-
-        # Stores gamma
-        self.gamma = gamma
 
         # Stores current state value estimates.
         self.Q = np.ones((env.nS, env.nA))
@@ -38,7 +37,7 @@ class ModelBasedLearner:
 
     def select_action(self, state):
         """
-        Returns an action, selected based on the current state.
+        Returns a greedy action, based on the current state.
 
         """
 
@@ -75,6 +74,10 @@ class ModelBasedLearner:
         Returns a pseudo env as learned by agent.
 
         """
+
+        # If no experience, there is no model.
+        if np.sum(self.n) == 0:
+            return None
 
         T_high = np.zeros((self.env.nS, self.env.nA, self.env.nS))
         T_low = np.zeros((self.env.nS, self.env.nA, self.env.nS))
@@ -124,11 +127,11 @@ class MBIE(ModelBasedLearner):
 
     """
 
-    def __init__(self, env, gamma, m, delta_t, delta_r):
+    def __init__(self, env, m, delta_t, delta_r):
         self.delta_t = delta_t
         self.delta_r = delta_r
         self.m = m
-        super().__init__(env, gamma)
+        super().__init__(env)
 
     def epsilon_r(self, state, action):
         """
@@ -149,7 +152,8 @@ class MBIE(ModelBasedLearner):
         Returns the epsilon determining confidence interval for the transition probability distribution (eq. 5 of paper).
 
         """
-        #Delta's used for experiment here delta_t = B
+
+        # Delta's used for experiment here delta_t = B
         if np.sum(self.n[state][action]) > 0:
             return self.delta_t * (1/np.sqrt(np.sum(self.n[state][action])))
         return  self.delta_t
@@ -171,7 +175,7 @@ class MBIE(ModelBasedLearner):
         T_high = self.upper_transition_distribution(state, action)
 
         # Update Q accordingly.
-        return max_R + self.gamma * np.dot(T_high, np.max(self.Q, axis = 1))
+        return max_R + GAMMA * np.dot(T_high, np.max(self.Q, axis = 1))
 
 class MBIE_EB(ModelBasedLearner):
     """
@@ -179,8 +183,8 @@ class MBIE_EB(ModelBasedLearner):
 
     """
 
-    def __init__(self, env, beta, gamma):
-        super(MBIE_EB, self).__init__(env, gamma)
+    def __init__(self, env, beta):
+        super(MBIE_EB, self).__init__(env)
         self.beta = beta
 
     def q_value(self, state, action):
@@ -190,7 +194,7 @@ class MBIE_EB(ModelBasedLearner):
         """
 
         # if np.sum(self.n[state][action]) > 0:
-        return self.R[state][action] + self.gamma * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
+        return self.R[state][action] + GAMMA * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
         # else:
         #     return maxsize / 2
 

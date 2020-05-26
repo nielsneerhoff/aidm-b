@@ -13,7 +13,7 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-        self.nS, self.nS = env.nS, env.nA
+        self.nS, self.nA = env.nS, env.nA
 
         # Domain expert could give expected reward for each state.
         # If not provided, use expected rewards from env.
@@ -27,7 +27,7 @@ class PseudoEnv(DiscreteEnv):
         # If not provided, use the trans. prob. upper and lower variant.
         if Ts is None:
             self.offset = offset
-            self.T_low, self.T_high = _offset_transition_function(env)
+            self.T_low, self.T_high = self._offset_transition_function(env)
         else:
             self.T_low = Ts[0]
             self.T_low = Ts[1]
@@ -60,6 +60,6 @@ class PseudoEnv(DiscreteEnv):
             for action in range(env.nA):
                 for next_state in range(env.nS):
                     probability = T[state, action, next_state]
-                    T_low[state, action, next_state] = max(probability - offset, 0)
-                    T_high[state, action, next_state] = min(probability + offset, 1)
+                    T_low[state, action, next_state] = max(probability - self.offset, 0)
+                    T_high[state, action, next_state] = min(probability + self.offset, 1)
         return T_low, T_high

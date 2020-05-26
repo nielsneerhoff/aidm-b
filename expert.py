@@ -1,34 +1,35 @@
 import numpy as np
 
+from utils import MAX_ITERATIONS, DELTA, GAMMA
+
 class BoundedParameterExpert:
     """
     Represents the agent guided by the parameter intervals of the expert.
 
     """
 
-    def __init__(self, env, gamma):
+    def __init__(self, env):
 
         self.env = env
-        self.gamma = gamma
 
         # Stores current state value intervals for both modes.
         self.Q_pes = np.ones((env.nS, env.nA, 2)) # Pessimistic.
         self.Q_opt = np.ones((env.nS, env.nA, 2)) # Optimistic.
 
-    def value_iteration(self, max_iterations, delta):
+    def value_iteration(self):
         """
         Perform value iteration based on the expert model.
 
         """
 
-        for i in range(max_iterations):
-            self.Q_opt, done_opt = self.optimistic_value_iterate(delta)
-            self.Q_pes, done_pes = self.pessimistic_value_iterate(delta)
+        for i in range(MAX_ITERATIONS):
+            self.Q_opt, done_opt = self.optimistic_value_iterate()
+            self.Q_pes, done_pes = self.pessimistic_value_iterate()
             if i > 1000 and done_opt and done_pes:
                 break
         return self.Q_pes, self.Q_opt
 
-    def optimistic_value_iterate(self, delta):
+    def optimistic_value_iterate(self):
         """
         Performs one iteration of optimistic value updates. Returns new value intervals for each state, and whether the update difference was smaller than delta.
 
@@ -48,7 +49,7 @@ class BoundedParameterExpert:
         permutation = np.argsort(Q_opt_ubs)[::-1][:self.env.nS]
         Q_opt_new[:, :, 1] = self.value_iterate(permutation, Q_opt_ubs)
 
-        return Q_opt_new, np.abs(np.sum(Q_opt_new) - np.sum(self.Q_opt)) < delta
+        return Q_opt_new, np.abs(np.sum(Q_opt_new) - np.sum(self.Q_opt)) < DELTA
 
     def pessimistic_value_iterate(self, delta):
         """
@@ -70,7 +71,7 @@ class BoundedParameterExpert:
         permutation = np.argsort(Q_pes_ubs)
         Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_ubs)
 
-        return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < delta
+        return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
 
     def value_iterate(self, permutation, q_values):
         """
@@ -97,7 +98,7 @@ class BoundedParameterExpert:
         # Update Q-values using order-maximizing/minimizing MDP.
         Qnew = np.zeros((self.env.nS, self.env.nA))
         for p in permutation:
-            Qnew[p] = self.env.R[p] + self.gamma * np.dot(F[p], q_values.T)
+            Qnew[p] = self.env.R[p] + GAMMA * np.dot(F[p], q_values.T)
         return Qnew
 
     def max_policy(self, mode):
