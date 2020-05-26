@@ -3,6 +3,8 @@ from numpy import random
 
 from sys import maxsize
 
+from pseudo_env import PseudoEnv
+
 class ModelBasedLearner:
     def __init__(self, env, gamma):
 
@@ -68,6 +70,54 @@ class ModelBasedLearner:
         else:
             return 2
 
+    def learned_model(self):
+        """
+        Returns a pseudo env as learned by agent.
+
+        """
+
+        T_high = np.zeros((self.env.nS, self.env.nA, self.env.nS))
+        T_low = np.zeros((self.env.nS, self.env.nA, self.env.nS))
+        for state in range(self.env.nS):
+            for action in range(self.env.nA):
+                T_high[state, action] = self.upper_transition_distribution(state, action)
+                T_low[state, action] = self.lower_transition_distribution(state, action)
+        return PseudoEnv(self.env, Ts = [T_low, T_high], rewards = self.R)
+
+    def upper_transition_distribution(self, state, action):
+        """
+        Finds upper-bound CI probability distribution maximizing expected Q value for state and action.
+
+        """
+
+        current_T = self.T[state][action].copy() # Deep copy.
+        max_next_state = np.argmax(np.max(self.Q, axis = 1))
+        epsilon_t = self.epsilon_t(state, action)
+        current_T[max_next_state] += epsilon_t / 2
+
+        removed = 0 # Counts how much probability is removed.
+        while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
+            min_next_state = None
+            min_value = np.inf
+            for s, values in enumerate(self.Q):
+                if current_T[s] > 0 and np.max(values) < min_value:
+                    min_next_state = s
+                    min_value = np.max(values)
+            remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
+            current_T[min_next_state] -= remove
+            removed += remove
+
+        return current_T / np.linalg.norm(current_T, 1)
+
+    def lower_transition_distribution(self, state, action):
+        """
+        Finds lower-bound CI probability distribution minimizing expected Q value for state and action.
+
+        """
+
+        # To do: similar to upper case, but return lower bound.
+        pass
+
 class MBIE(ModelBasedLearner):
     """
     MBIE agent.
@@ -117,44 +167,11 @@ class MBIE(ModelBasedLearner):
         # Pick right-tail upper confidence bound on reward.
         epsilon_r = self.epsilon_r(state, action)
         max_R = self.R[state][action] + epsilon_r
-        
-        T_high = upper_transition_distribution(state, action)
+
+        T_high = self.upper_transition_distribution(state, action)
 
         # Update Q accordingly.
         return max_R + self.gamma * np.dot(T_high, np.max(self.Q, axis = 1))
-
-    def upper_transition_distribution(self, state, action):
-        """
-        Finds upper-bound CI probability distribution maximizing expected Q value for state and action.
-
-        """
-
-        current_T = self.T[state][action].copy() # Deep copy.
-        max_next_state = np.argmax(np.max(self.Q, axis = 1))
-        epsilon_t = self.epsilon_t(state, action)
-        current_T[max_next_state] += epsilon_t / 2
-
-        removed = 0 # Counts how much probability is removed.
-        while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
-            min_next_state = None
-            min_value = np.inf
-            for s, values in enumerate(self.Q):
-                if current_T[s] > 0 and np.max(values) < min_value:
-                    min_next_state = s
-                    min_value = np.max(values)
-            remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
-            current_T[min_next_state] -= remove
-            removed += remove
-
-        return current_T / np.linalg.norm(current_T, 1)
-
-    def lower_transition_distribution(self, state, action):
-        """
-        Finds lower-bound CI probability distribution minimizing expected Q value for state and action.
-
-        """
-
-        pass
 
 class MBIE_EB(ModelBasedLearner):
     """

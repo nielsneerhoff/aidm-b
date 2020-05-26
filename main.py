@@ -5,6 +5,7 @@ from sys import maxsize
 from agent import MBIE, MBIE_EB
 from expert import BoundedParameterExpert
 from pseudo_env import PseudoEnv
+from mediator import Mediator
 
 env = gym.make("gym_factored:river-swim-v0")
 
@@ -13,9 +14,10 @@ def learn_online(
     state = env.reset()
     cum_reward = 0
     for i in range(max_episodes):
-        action = agent.select_action(state)
+        action = mediator.select_action(state)
         new_state, reward, done, info = env.step(action)
         agent.process_experience(state, action, new_state, reward, done)
+        agent_model = agent.learned_model()
         cum_reward += reward
         # if i % 100 == 0:
         agent.value_iteration(max_iterations, delta)
@@ -37,7 +39,8 @@ agent = MBIE(env, gamma, maxsize, B, A)
 
 agent = MBIE(env, 0.95, 10, 0.5, 0.5)
 # agent = MBIE_EB(env, 40000, 0.95)
-pseudo_env = PseudoEnv(env)
+expert_model = PseudoEnv(env)
+mediator = Mediator(expert_model)
 # expert = BoundedParameterExpert(pseudo_env, 0.95)
 # print(learn_online(env, agent, expert))
 print(learn_online(env, agent))
