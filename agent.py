@@ -69,6 +69,12 @@ class MBIE(ModelBasedLearner):
 
     """
 
+    # def __init__(self, env, m, delta_t, delta_r):
+    #     super().__init__(env)
+    #     self.m = m
+    #     self.delta_t = delta_t
+    #     self.delta_r = delta_r
+
     def __init__(self, env, gamma, m, A, B):
         super().__init__(env, gamma)
         self.m = m
@@ -85,6 +91,10 @@ class MBIE(ModelBasedLearner):
             return self.A * (self.env.r_max/np.sqrt(np.sum(self.n[state][action])))
         return  self.A * self.env.r_max
 
+        # if np.sum(self.n[state][action]) > 0:
+        #     return np.sqrt(np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
+        # return  np.sqrt(np.log(2 / self.delta_r) / 2
+
     def epsilon_t(self, state, action):
         """
         Returns the epsilon determining confidence interval for the transition probability distribution (eq. 5 of paper).
@@ -94,6 +104,10 @@ class MBIE(ModelBasedLearner):
         if np.sum(self.n[state][action]) > 0:
             return self.B * (1/np.sqrt(np.sum(self.n[state][action])))
         return  self.B
+
+        # return np.sqrt(
+        #     (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta_t))
+        #     / self.m)
 
     def q_value(self, state, action):
         """
