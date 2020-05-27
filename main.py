@@ -18,7 +18,8 @@ def learn_online(
         agent.process_experience(state, action, new_state, reward, done)
         metrics.increase_cum_reward(reward)
         agent.value_iteration(max_iterations, delta)
-        print('Iteration', i, '\t', agent.Q, '\t', metrics.get_cum_reward())
+        # print('Iteration', i, '\t', agent.Q, '\t', metrics.get_cum_reward()
+        print(agent.max_policy)
         state = new_state
 
     return agent.Q, metrics.get_cum_reward()
@@ -39,8 +40,9 @@ metrics = MetricsTracker(agent)
 
 
 agent = MBIE(env, 0.95, 10, 0.5, 0.5)
+
 # agent = MBIE_EB(env, 40000, 0.95)
-pseudo_env = PseudoEnv(env, 0.2)
+# pseudo_env = PseudoEnv(env, 0.2)
 # expert = BoundedParameterExpert(pseudo_env, 0.95)
 # print(learn_online(env, agent, expert))
 print(learn_online(env, metrics, agent))
