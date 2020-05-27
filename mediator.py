@@ -6,14 +6,15 @@ class Mediator:
 
     """
 
-    def __init__(self, expert, iterate = False):
+    def __init__(self, expert, iterate = True):
         """
         Sets the properties of this mediator.
 
         """
 
         self.expert = expert
-        self.expert.value_iteration() if iterate else None
+        if iterate:
+            self.expert.value_iteration()
 
     def select_action(self, state, agent_model):
         """
