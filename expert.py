@@ -51,7 +51,7 @@ class BoundedParameterExpert:
 
         return Q_opt_new, np.abs(np.sum(Q_opt_new) - np.sum(self.Q_opt)) < DELTA
 
-    def pessimistic_value_iterate(self, delta):
+    def pessimistic_value_iterate(self):
         """
         Performs one iteration of pessimistic value updates. Returns new value intervals for each state, and whether the update difference was smaller than delta.
 
@@ -122,13 +122,16 @@ class BoundedParameterExpert:
             # Sort on upper bound, then on lower bound.
             Q_opt = self.Q_opt[state].copy()
             Q_opt = Q_opt[Q_opt[:, 0].argsort()]
-            Q_opt = Q_opt[Q_opt[:, 1].argsort(kind = 'mergesort')]
+            actions = Q_opt[:, 1].argsort(kind = 'mergesort')
+            return actions [-1]
 
             return np.argmax(Q_opt[-1])
         elif mode == 'pessimistic':
             # Sort on lower bound, then on upper bound.
             Q_pes = self.Q_pes[state].copy()
+  
             Q_pes = Q_pes[Q_pes[:, 1].argsort()]
-            Q_pes = Q_pes[Q_pes[:, 0].argsort(kind = 'mergesort')]
-
-            return np.argmax(Q_pes[-1])
+            
+            actions = Q_pes[:, 0].argsort(kind = 'mergesort')
+            print(actions)
+            return actions[-1]

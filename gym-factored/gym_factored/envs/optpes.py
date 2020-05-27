@@ -39,26 +39,30 @@ class OptPes(DiscreteEnv):
         t = np.zeros((ns, na, ns))
 
         #State 0
-        t[0, ACTION1, 1] = 0.7
-        t[0, ACTION1, 2] = 0.3
-        t[0, ACTION0, 3] = 0.7  
-        t[0, ACTION0, 4] = 0.3
+        t[0, ACTION0, 1] = 0.7
+        t[0, ACTION0, 2] = 0.3
+        t[0, ACTION1, 3] = 0.7  
+        t[0, ACTION1, 4] = 0.3
 
 
         #State 1
-        t[1, ACTION0, 1] = 1
+        t[1, ACTION0, 1] = 0.9
+        t[1, ACTION0, 0] = 0.1
        
    
         #State 2
-        t[2, ACTION0, 2] = 1
+        t[2, ACTION0, 2] = 0.9
+        t[2, ACTION0, 0] = 0.1
        
 
         #State 3
-        t[3, ACTION0, 3] = 1
+        t[3, ACTION0, 3] = 0.9
+        t[3, ACTION0, 0] = 0.1
        
 
         #State 4
-        t[4, ACTION0, 4] = 1
+        t[4, ACTION0, 4] = 0.9
+        t[4, ACTION0, 0] = 0.1
         
 
         return t
@@ -78,7 +82,7 @@ class OptPes(DiscreteEnv):
         r[3, ACTION0, 3] = 200
 
         #State 4
-        r[4, ACTION0, 4] = -2000
+        r[4, ACTION0, 4] = -3000
      
         return r
 

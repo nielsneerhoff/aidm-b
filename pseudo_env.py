@@ -26,11 +26,12 @@ class PseudoEnv(DiscreteEnv):
         # Expert could give offset, measure of uncertainty on trans. prob.
         # If not provided, use the trans. prob. upper and lower variant.
         if Ts is None:
+            assert offset != 0
             self.offset = offset
             self.T_low, self.T_high = self._offset_transition_function(env)
         else:
             self.T_low = Ts[0]
-            self.T_low = Ts[1]
+            self.T_high = Ts[1]
 
     def _expected_rewards(self, env):
         """

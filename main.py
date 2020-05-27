@@ -38,15 +38,22 @@ rmax = 10000
 
 A = 0.3
 B = 0
-agent = MBIE(env, maxsize, B, A)
+#agent = MBIE(env, maxsize, B, A)
 
 # agent = MBIE(env, 10, 0.5, 0.5)
 # agent = MBIE_EB(env, 40000, 0.95)
 
 #### Start new ####
-expert_model = PseudoEnv(env) # Initializes expert env (=model).
-expert = BoundedParameterExpert(expert_model) # Intializes alg for dealing with model.
-mediator = Mediator(expert_model) # Start value iterating in expert model only if iterate = True is passed.
-##### End new #####
+Tlow = env.get_transition_function(env.nA, env.nS)
+Thigh = Tlow.copy() 
+Tlow[0,1,3] = 0.1
+T = (Tlow, Thigh)
 
-print(learn_online(env, agent, mediator))
+expert_model = PseudoEnv(env, Ts = T) # Initializes expert env (=model).
+expert = BoundedParameterExpert(expert_model) # Intializes alg for dealing with model.
+mediator = Mediator(expert) # Start value iterating in expert model only if iterate = True is passed.
+##### End new #####
+expert.value_iteration()
+print(expert.select_action(0, "pessimistic"))
+print('Opt:')
+print(expert.select_action(0, 'optimistic'))
