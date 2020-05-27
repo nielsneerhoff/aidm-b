@@ -1,6 +1,8 @@
 import numpy as np
 from gym.envs.toy_text.discrete import DiscreteEnv
 
+from warnings import warn
+
 class PseudoEnv(DiscreteEnv):
     """
     Represents an environment as given by an expert or agent.
@@ -12,6 +14,10 @@ class PseudoEnv(DiscreteEnv):
         Initializes a pseudo env. For the transition probabilities, we need either an offset, or two transition probability distributions. If no rewards are passed, the expected rewards are calculated from the env in args.
 
         """
+
+
+        if offset is 0 and Ts is None and rewards is None:
+            warn('No offset, transition distribution or rewards provided. Proceeding with env.')
 
         self.nS, self.nA = env.nS, env.nA
 
@@ -26,7 +32,6 @@ class PseudoEnv(DiscreteEnv):
         # Expert could give offset, measure of uncertainty on trans. prob.
         # If not provided, use the trans. prob. upper and lower variant.
         if Ts is None:
-            assert offset != 0
             self.offset = offset
             self.T_low, self.T_high = self._offset_transition_function(env)
         else:
