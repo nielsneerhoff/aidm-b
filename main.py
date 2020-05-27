@@ -46,7 +46,7 @@ B = 0
 #### Start new ####
 Tlow = env.get_transition_function(env.nA, env.nS)
 Thigh = Tlow.copy() 
-Tlow[0,1,3] = 0.1
+Tlow[0,1,3] = 0.4
 T = (Tlow, Thigh)
 
 expert_model = PseudoEnv(env, Ts = T) # Initializes expert env (=model).
@@ -55,5 +55,4 @@ mediator = Mediator(expert) # Start value iterating in expert model only if iter
 ##### End new #####
 expert.value_iteration()
 print(expert.select_action(0, "pessimistic"))
-print('Opt:')
 print(expert.select_action(0, 'optimistic'))

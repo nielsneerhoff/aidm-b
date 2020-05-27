@@ -118,20 +118,14 @@ class BoundedParameterExpert:
 
         """
 
-        if mode == 'optimistic':
-            # Sort on upper bound, then on lower bound.
-            Q_opt = self.Q_opt[state].copy()
-            Q_opt = Q_opt[Q_opt[:, 0].argsort()]
-            actions = Q_opt[:, 1].argsort(kind = 'mergesort')
-            return actions [-1]
+        if mode is 'optimistic':
 
-            return np.argmax(Q_opt[-1])
-        elif mode == 'pessimistic':
-            # Sort on lower bound, then on upper bound.
+            # To do: Sort on upper bound, then on lower bound.
+            Q_opt = self.Q_opt[state].copy()
+            return Q_opt[:, 1].argsort(kind = 'mergesort')[-1]
+
+        elif mode is 'pessimistic':
+
+            # To do: Sort on lower bound, then on upper bound.
             Q_pes = self.Q_pes[state].copy()
-  
-            Q_pes = Q_pes[Q_pes[:, 1].argsort()]
-            
-            actions = Q_pes[:, 0].argsort(kind = 'mergesort')
-            print(actions)
-            return actions[-1]
+            return Q_pes[:, 0].argsort(kind = 'mergesort')[-1]
