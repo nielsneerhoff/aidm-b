@@ -19,7 +19,7 @@ class ModelBasedLearner:
         self.n = np.zeros((env.nS, env.nA, env.nS))
 
         # Stores transition probability estimates and reward estimates.
-        self.T = np.ones((env.nS, env.nA, env.nS)) / (env.nS)
+        self.T = np.ones((env.nS, env.nA, env.nS)) / 2
         self.R = np.zeros((env.nS, env.nA))
 
     def process_experience(self, state, action, next_state, reward, done):
@@ -97,14 +97,15 @@ class ModelBasedLearner:
         Returns the epsilon determining confidence interval for the reward distribution (eq. 2 of paper).
 
         """
-        #Delta's used for experiment here delta_r = A
+
+        # Delta's used for experiment here delta_r = A
         if np.sum(self.n[state][action]) > 0:
             return self.delta_r * (self.env.rmax/np.sqrt(np.sum(self.n[state][action])))
         return  self.delta_r * self.env.rmax
 
         # if np.sum(self.n[state][action]) > 0:
         #     return np.sqrt(np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
-        # return  np.sqrt(np.log(2 / self.delta_r) / 2
+        # return np.sqrt(np.log(2 / self.delta_r) / 2
 
     def epsilon_t(self, state, action):
         """

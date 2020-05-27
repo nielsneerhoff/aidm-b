@@ -15,7 +15,7 @@ class Mediator:
         self.expert = expert
         self.expert.value_iteration() if iterate else None
 
-    def select_action(self, agent_model):
+    def select_action(self, state, agent_model):
         """
         Returns an action to select based on the current agent and/or expert model (if the agent model is provided).
 
@@ -23,4 +23,9 @@ class Mediator:
 
         # Base case.
         if agent_model is not None:
-            pass
+            # Magic.
+            agent = BoundedParameterExpert(agent_model)
+            agent.value_iteration()
+            return agent.select_action(state, 'pessimistic')
+        else:
+            return self.expert.select_action(state, 'pessimistic')
