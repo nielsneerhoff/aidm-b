@@ -17,6 +17,7 @@ class RiverSwimEnv(DiscreteEnv):
     """
 
     def __init__(self):
+        self.rmax = 10000
         ns = 6
         na = 2  # left and right
 

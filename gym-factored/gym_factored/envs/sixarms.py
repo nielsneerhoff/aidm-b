@@ -10,7 +10,7 @@ ACTION5 = 5
 
 class SixArmsEnv(DiscreteEnv):
     """
-    this is a SixArmsEnv chain env using the DiscreteEnv class
+    this is a SixArmsEnv using the DiscreteEnv class
 
     for a more general implementation of a chain env checkout gym/envs/toy_text/nchain.py
 
