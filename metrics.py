@@ -214,15 +214,15 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         for R: https://stats.stackexchange.com/questions/234757/how-to-use-kullback-leibler-divergence-if-mean-and-standard-deviation-of-of-two
 
         '''
-        # KL divergence transition: sum(Yt * log(Xt/Yt)) where Yt != 0
-        agent_transitions = self.agent.T[state][action][self.env_T[state][action] != 0]
-        env_transitions = self.env_T[state][action][self.env_T[state][action] != 0]
+        with np.errstate(divide='ignore'):
+            # KL divergence transition: sum(Yt * log(Xt/Yt)) where Yt != 0
+            agent_transitions = self.agent.T[state][action][self.env_T[state][action] != 0]
+            env_transitions = self.env_T[state][action][self.env_T[state][action] != 0]
 
-        self.KL_divergence_T[state][action] = np.sum(env_transitions * np.log(agent_transitions / env_transitions))
+            self.KL_divergence_T[state][action] = np.sum(env_transitions * np.log(agent_transitions / env_transitions))
 
-        # KL divergence reward: log(std(Xt) / std(Yt)) + (std(Rt)^2 + (mean(Rt) - mean(Yt))^2) / (2 * std(Yt)^2)) - 0.5 where std(Yt) != 0
-        if self.env_std_reward[state][action] > 0: # and self.std_reward[state][action] > 0
-            with np.errstate(divide='ignore'):
+            # KL divergence reward: log(std(Xt) / std(Yt)) + (std(Rt)^2 + (mean(Rt) - mean(Yt))^2) / (2 * std(Yt)^2)) - 0.5 where std(Yt) != 0
+            if self.env_std_reward[state][action] > 0: # and self.std_reward[state][action] > 0
                 self.KL_divergence_R[state][action] = np.log(self.env_std_reward[state][action] / self.std_reward[state][action]) + \
                     (np.square(self.std_reward[state][action]) + np.square(self.agent.R[state][action] - self.env_mean_reward[state][action])) / \
                         (2 * np.square(self.env_std_reward[state][action])) - 0.5

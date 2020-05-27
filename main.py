@@ -19,8 +19,8 @@ def learn_online(
         metrics.update_metrics(state, action, reward, i)
         agent.value_iteration(max_iterations, delta)
         if i % 100 == 0:
-            print('Iteration', i, '\t')
-            print(agent.Q)
+            print('Iteration', i)
+            # print(agent.Q)
             print(metrics)
         state = new_state
     return agent.Q, '\n', agent.max_policy(), '\n', agent.T
