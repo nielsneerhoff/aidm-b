@@ -1,8 +1,6 @@
 import numpy as np
 from gym.envs.toy_text.discrete import DiscreteEnv
 
-from warnings import warn
-
 class PseudoEnv(DiscreteEnv):
     """
     Represents an environment as given by an expert or agent.
@@ -15,9 +13,8 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-
         if offset is 0 and Ts is None and rewards is None:
-            warn('No offset, transition distribution or rewards provided. Proceeding with env.')
+            print('No offset, transition distribution or rewards provided. Proceeding copy from env.')
 
         self.nS, self.nA = env.nS, env.nA
 

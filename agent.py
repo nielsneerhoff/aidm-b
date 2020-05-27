@@ -79,13 +79,47 @@ class ModelBasedLearner:
         if np.sum(self.n) == 0:
             return None
 
-        T_high = np.zeros((self.env.nS, self.env.nA, self.env.nS))
+        T_high = np.ones((self.env.nS, self.env.nA, self.env.nS))
         T_low = np.zeros((self.env.nS, self.env.nA, self.env.nS))
+
         for state in range(self.env.nS):
             for action in range(self.env.nA):
-                T_high[state, action] = self.upper_transition_distribution(state, action)
-                T_low[state, action] = self.lower_transition_distribution(state, action)
+                epsilon_t = self.epsilon_t(state, action)
+                T_high[state, action] = np.minimum(
+                    self.T[state, action] + epsilon_t, T_high[state][action])
+                T_low[state, action] = np.maximum(
+                    self.T[state, action] - epsilon_t, T_low[state][action])
+
         return PseudoEnv(self.env, Ts = [T_low, T_high], rewards = self.R)
+
+    def epsilon_r(self, state, action):
+        """
+        Returns the epsilon determining confidence interval for the reward distribution (eq. 2 of paper).
+
+        """
+        #Delta's used for experiment here delta_r = A
+        if np.sum(self.n[state][action]) > 0:
+            return self.delta_r * (self.env.rmax/np.sqrt(np.sum(self.n[state][action])))
+        return  self.delta_r * self.env.rmax
+
+        # if np.sum(self.n[state][action]) > 0:
+        #     return np.sqrt(np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
+        # return  np.sqrt(np.log(2 / self.delta_r) / 2
+
+    def epsilon_t(self, state, action):
+        """
+        Returns the epsilon determining confidence interval for the transition probability distribution (eq. 5 of paper).
+
+        """
+
+        # Delta's used for experiment here delta_t = B
+        if np.sum(self.n[state][action]) > 0:
+            return self.delta_t * (1/np.sqrt(np.sum(self.n[state][action])))
+        return  self.delta_t
+
+        # return np.sqrt(
+        #     (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta_t))
+        #     / self.m)
 
     def upper_transition_distribution(self, state, action):
         """
@@ -132,35 +166,6 @@ class MBIE(ModelBasedLearner):
         self.delta_r = delta_r
         self.m = m
         super().__init__(env)
-
-    def epsilon_r(self, state, action):
-        """
-        Returns the epsilon determining confidence interval for the reward distribution (eq. 2 of paper).
-
-        """
-        #Delta's used for experiment here delta_r = A
-        if np.sum(self.n[state][action]) > 0:
-            return self.delta_r * (self.env.rmax/np.sqrt(np.sum(self.n[state][action])))
-        return  self.delta_r * self.env.rmax
-
-        # if np.sum(self.n[state][action]) > 0:
-        #     return np.sqrt(np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
-        # return  np.sqrt(np.log(2 / self.delta_r) / 2
-
-    def epsilon_t(self, state, action):
-        """
-        Returns the epsilon determining confidence interval for the transition probability distribution (eq. 5 of paper).
-
-        """
-
-        # Delta's used for experiment here delta_t = B
-        if np.sum(self.n[state][action]) > 0:
-            return self.delta_t * (1/np.sqrt(np.sum(self.n[state][action])))
-        return  self.delta_t
-
-        # return np.sqrt(
-        #     (2 * np.log(np.power(2, self.env.nS) - 2) - np.log(self.delta_t))
-        #     / self.m)
 
     def q_value(self, state, action):
         """

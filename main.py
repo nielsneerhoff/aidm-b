@@ -16,7 +16,7 @@ def learn_online(env, agent, mediator):
     for i in range(MAX_EPISODES):
 
         #### Start new ####
-        # agent_model = agent.learned_model()
+        agent_model = agent.learned_model()
         # action = mediator.select_action(state, agent_model)
         ##### End new #####
 
