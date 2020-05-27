@@ -28,11 +28,13 @@ class BoundedParameterExpert:
         # Sort upper.
         return self.Q
 
-    def value_iterate(permutation):
+    def value_iterate(self, permutation):
 
         for state in range(self.env.nS):
             for action in range(self.env.nA):
                 Qnew[state][action] = self.q_value(state, action)
+
+                
     def max_policy(self):
         return np.argmax(self.Q, axis = 1)
 
