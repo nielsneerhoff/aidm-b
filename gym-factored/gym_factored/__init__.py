@@ -81,8 +81,8 @@ register(
     max_episode_steps=1000
 )
 
-# register(
-#     id='',
-#     entry_point='gym_factored.envs.optpes:OptPes',
-#     max_episode_steps=1000
-# )
+register(
+    id='optpes-v0',
+    entry_point='gym_factored.envs.optpes:OptPes',
+    max_episode_steps=1000
+)

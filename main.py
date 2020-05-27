@@ -8,7 +8,7 @@ from pseudo_env import PseudoEnv
 from mediator import Mediator
 from utils import *
 
-env = gym.make("gym_factored:river-swim-v0")
+env = gym.make("gym_factored:optpes-v0")
 
 def learn_online(env, agent, mediator):
     state = env.reset()
