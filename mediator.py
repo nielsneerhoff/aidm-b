@@ -22,11 +22,11 @@ class Mediator:
 
         """
 
-        # Base case.
         if agent_model is not None:
             # Magic.
             agent = BoundedParameterExpert(agent_model)
             agent.value_iteration()
             return agent.select_action(state, 'pessimistic')
+        # Base case.
         else:
             return self.expert.select_action(state, 'pessimistic')
