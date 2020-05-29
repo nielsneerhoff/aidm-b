@@ -32,12 +32,14 @@ class ModelBasedLearner:
 
         """
 
-        # Increment the # times s, a, s' was observed.
-        self.n[state][action][next_state] += 1
+        # Only update model if within model size (see section 3 bullet point 7)
+        if np.sum(self.n[state][action]) < m:
+            # Increment the # times s, a, s' was observed.
+            self.n[state][action][next_state] += 1
 
-        # Adjust mean probability and reward estimate accordingly.
-        self.T[state][action] = self.n[state][action] / np.sum(self.n[state][action])
-        self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
+            # Adjust mean probability and reward estimate accordingly.
+            self.T[state][action] = self.n[state][action] / np.sum(self.n[state][action])
+            self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
 
     def select_action(self, state):
         """
