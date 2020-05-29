@@ -8,16 +8,16 @@ from pseudo_env import HighLowModel
 from utils import GAMMA, DELTA_R, DELTA_T
 
 class ModelBasedLearner:
-    def __init__(self, nS, nA, m, delta_t, delta_r):
-
-        self.delta_t, self.delta_r = delta_t, delta_r
+    def __init__(self, nS, nA, m, max_reward):
 
         self.nS, self.nA = nS, nA
+
+        self.max_reward = max_reward
 
         self.m = m
 
         # Stores current state value estimates.
-        self.Q = np.ones((nS, nA)) / (1 - GAMMA) # Optimistic init.
+        self.Q = np.ones((nS, nA)) * max_reward / (1 - GAMMA) # Optimistic.
 
         # Stores # times s, a , s' was observed.
         self.n = np.zeros((nS, nA, nS))
@@ -33,7 +33,7 @@ class ModelBasedLearner:
         """
 
         # Only update model if within model size (see section 3 bullet point 7)
-        if np.sum(self.n[state][action]) < m:
+        if np.sum(self.n[state][action]) < self.m:
             # Increment the # times s, a, s' was observed.
             self.n[state][action][next_state] += 1
 
@@ -124,7 +124,8 @@ class ModelBasedLearner:
         # return self.delta_r * self.env.rmax
 
         return np.sqrt(
-            np.log(2 / self.delta_r) / (2 * np.sum(self.n[state][action])))
+            np.log(2 / DELTA_R) / (
+            2 * np.sum(self.n[state][action]))) * self.max_reward
 
     def epsilon_t(self, state, action):
         """
@@ -137,9 +138,10 @@ class ModelBasedLearner:
         #     return self.delta_t * (1/np.sqrt(np.sum(self.n[state][action])))
         # return  self.delta_t
 
+        # Note, I suppose there is a mistake in the paper (equation 5).
         return np.sqrt(
-            (2 * np.log(np.power(2, self.nS) - 2) - np.log(self.delta_t))
-            / self.m)
+            (2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T))
+            / np.sum(self.n[state][action]))
 
 class MBIE(ModelBasedLearner):
     """
@@ -147,8 +149,8 @@ class MBIE(ModelBasedLearner):
 
     """
 
-    def __init__(self, nS, nA, m, delta_t = DELTA_T, delta_r = DELTA_R):
-        super().__init__(nS, nA, m, delta_t, delta_r)
+    def __init__(self, nS, nA, m, max_reward):
+        super().__init__(nS, nA, m, max_reward)
 
     def q_value(self, state, action):
         """
@@ -161,13 +163,14 @@ class MBIE(ModelBasedLearner):
             # Pick right-tail upper confidence bound on reward.
             epsilon_r = self.epsilon_r(state, action)
             max_R = self.R[state][action] + epsilon_r
+            # print(state, action, max_R, (10000 / scale), scale)
 
             T_max = self.upper_transition_distribution(state, action)
 
             # Return Q accordingly.
             return max_R + GAMMA * np.dot(T_max, np.max(self.Q, axis = 1))
         else:
-            return 1 / (1 - GAMMA) # See paper below eq. 6.
+            return self.max_reward / (1 - GAMMA) # See paper below eq. 6.
 
     def upper_transition_distribution(self, state, action):
         """
@@ -178,6 +181,7 @@ class MBIE(ModelBasedLearner):
         current_T = self.T[state][action].copy() # Deep copy.
         max_next_state = np.argmax(np.max(self.Q, axis = 1))
         epsilon_t = self.epsilon_t(state, action)
+        # print('epsilon_t', state, action, epsilon_t)
         current_T[max_next_state] += epsilon_t / 2
 
         removed = 0 # Counts how much probability is removed.
@@ -200,9 +204,9 @@ class MBIE_EB(ModelBasedLearner):
 
     """
 
-    def __init__(self, nS, nA, m, beta, delta_t = DELTA_T, delta_r = DELTA_R):
+    def __init__(self, nS, nA, m, beta, max_reward):
         self.beta = beta
-        super(MBIE_EB, self).__init__(nS, nA, m, delta_t, delta_r)
+        super(MBIE_EB, self).__init__(nS, nA, m, max_reward)
 
     def q_value(self, state, action):
         """
@@ -213,7 +217,7 @@ class MBIE_EB(ModelBasedLearner):
         if np.sum(self.n[state][action]) > 0:
             return self.R[state][action] + GAMMA * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
         else:
-            return 1 / (1 - GAMMA) # See paper below eq. 6.
+            return self.max_reward / (1 - GAMMA) # See paper below eq. 6.
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))
