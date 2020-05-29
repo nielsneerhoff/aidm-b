@@ -22,12 +22,12 @@ class Metrics:
         self.cumulative_reward = 0.
 
         # Transition Function Environment
-        self.env_T = self.get_transition_function()
+        self.env_T = self.__get_transition_function()
 
         # Reward distributions
         self.env_mean_reward = np.zeros((self.env.nS, self.env.nA))
         self.env_std_reward = np.zeros((self.env.nS, self.env.nA))
-        self.init_reward_distributions()
+        self.__init_reward_distributions()
 
         self.rewards_history = np.frompyfunc(list, 0, 1)(np.empty((self.env.nS, self.env.nA), dtype=object))
         self.std_reward = np.zeros((self.env.nS, self.env.nA))
@@ -36,10 +36,10 @@ class Metrics:
         # KL Convergence
         self.KL_divergence_T = np.zeros((self.env.nS, self.env.nA))
         self.KL_divergence_R = np.zeros((self.env.nS, self.env.nA))
-        self.init_KL_divergence()
+        self.__init_KL_divergence()
 
         # Max policy env
-        self.env_max_policy = self.get_env_max_policy()
+        self.env_max_policy = self.__get_env_max_policy()
 
         # Max policy agent
         self.agent_max_policy = self.agent.max_policy()
@@ -83,66 +83,9 @@ Coverage error reward squared: {self.coverage_error_squared_R}
 Sample complexity: {self.sample_complexity}
 Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
 
-    def get_transition_function(self):
-        '''
-        Recreate transition function.
 
-        '''
-        T = np.zeros((self.env.nS, self.env.nA, self.env.nS))
-        for state, actions in self.env.P.items():
-            for action, probs in actions.items():
-                for (prob, new_state, reward, _) in probs:
-                    T[state][action][new_state] = prob
-        return T
+    ### ''' Public Updater Methods ''' ###
 
-
-    def init_reward_distributions(self):
-        '''
-        Get reward distributions
-
-        '''
-        for state, actions in self.env.P.items():
-            for action, probs in actions.items():
-                self.env_mean_reward[state][action] = sum(reward * prob for (prob, _, reward, _) in probs)
-                self.env_std_reward[state][action] = np.sqrt(sum(
-                    abs(reward - self.env_mean_reward[state][action])**2 * prob 
-                        for (prob, _, reward, _) in probs))
-
-        
-    def init_KL_divergence(self):
-        '''
-        Initialize KL divergence arrays with values.
-        
-        '''
-        for state in range(self.env.nS):
-            for action in range(self.env.nA):
-                self.__update_KL_divergence(state, action)
-
-
-    def get_env_max_policy(self):
-        '''
-        Get optimal policy of the environment
-
-        '''
-        return np.argmax(self.value_iteration_env(), axis = 1)
-
-
-
-    def value_iteration_env(self, delta = 1e-3):
-        '''
-        Value iterate over the environment until converged
-
-        '''
-        Q_old = np.ones((self.env.nS, self.env.nA))
-        while True:
-            Q_new = np.array([[self.env_mean_reward[state][action] + \
-                self.agent.gamma * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
-                    for action in range(self.env.nA)] \
-                        for state in range(self.env.nS)])
-            if np.sum(np.abs(Q_old - Q_new)) < delta:
-                return Q_new
-            Q_old = Q_new
-        
 
     def get_runtime(self):
         '''
@@ -175,6 +118,72 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         # updates sample complexity, how far from the optimal policy
         self.__update_sample_complexity(step)
         
+
+    ### ''' Private Initializer Methods ''' ###
+    
+
+    def __get_transition_function(self):
+        '''
+        Recreate transition function.
+
+        '''
+        T = np.zeros((self.env.nS, self.env.nA, self.env.nS))
+        for state, actions in self.env.P.items():
+            for action, probs in actions.items():
+                for (prob, new_state, reward, _) in probs:
+                    T[state][action][new_state] = prob
+        return T
+
+
+    def __init_reward_distributions(self):
+        '''
+        Get reward distributions
+
+        '''
+        for state, actions in self.env.P.items():
+            for action, probs in actions.items():
+                self.env_mean_reward[state][action] = sum(reward * prob for (prob, _, reward, _) in probs)
+                self.env_std_reward[state][action] = np.sqrt(sum(
+                    abs(reward - self.env_mean_reward[state][action])**2 * prob 
+                        for (prob, _, reward, _) in probs))
+
+        
+    def __init_KL_divergence(self):
+        '''
+        Initialize KL divergence arrays with values.
+        
+        '''
+        for state in range(self.env.nS):
+            for action in range(self.env.nA):
+                self.__update_KL_divergence(state, action)
+
+
+    def __get_env_max_policy(self):
+        '''
+        Get optimal policy of the environment
+
+        '''
+        return np.argmax(self.__value_iteration_env(), axis = 1)
+
+
+
+    def __value_iteration_env(self, delta = 1e-3):
+        '''
+        Value iterate over the environment until converged
+
+        '''
+        Q_old = np.ones((self.env.nS, self.env.nA))
+        while True:
+            Q_new = np.array([[self.env_mean_reward[state][action] + \
+                self.agent.gamma * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
+                    for action in range(self.env.nA)] \
+                        for state in range(self.env.nS)])
+            if np.sum(np.abs(Q_old - Q_new)) < delta:
+                return Q_new
+            Q_old = Q_new
+        
+
+    ### ''' Private Updater Methods ''' ###
 
 
     def __update_cumulative_reward(self, reward):
