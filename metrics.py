@@ -246,14 +246,16 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         self.agent_max_policy = self.agent.max_policy()
 
 
-    def __update_sample_complexity(self, step):
+    def __update_sample_complexity(self, step, epsilon=1e-01):
         '''
         Update sample complexity
         Computed as the count of differences between best policy and current policy -> 0 is best
 
         '''
-        self.sample_complexity = np.count_nonzero(self.agent_max_policy != self.env_max_policy)
-        if not self.hit_zero_sample_complexity and self.sample_complexity == 0:
+        self.sample_complexity = np.count_nonzero(self.agent_max_policy == self.env_max_policy)
+        percentage_correct = self.sample_complexity / self.agent_max_policy.shape[0]
+
+        if not self.hit_zero_sample_complexity and percentage_correct > 1-epsilon:
             self.hit_zero_sample_complexity = True
             self.zero_sample_complexity_steps = step
 

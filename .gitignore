@@ -1,2 +1,4 @@
 # Environments
 .vscode
+
+__pycache__
