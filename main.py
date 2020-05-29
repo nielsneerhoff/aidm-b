@@ -28,6 +28,7 @@ def learn_online(env, agent, mediator):
             mediator_action = mediator.select_action(state, agent_model)
             print('Iteration', i, '\t', agent.max_policy(), '\t', agent.Q)
             print(metrics_eb)
+    metrics_eb.calculate_instantaneous_loss()
     return agent.Q, cum_reward
 
 # Initialize agents.
