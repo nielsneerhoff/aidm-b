@@ -25,8 +25,6 @@ class Metrics:
         # Transition Function Environment
         self.env_T = self.__get_transition_function()
 
-        self.reward_timeline = np.zeros((MAX_EPISODES, 2))
-
         # Reward distributions
         self.env_mean_reward = np.zeros((self.env.nS, self.env.nA))
         self.env_std_reward = np.zeros((self.env.nS, self.env.nA))
@@ -58,6 +56,10 @@ class Metrics:
         self.sample_complexity = 0
         self.hit_zero_sample_complexity = False
         self.zero_sample_complexity_steps = -1
+
+        # Reward and State timeline for instantaneous loss calculation
+        self.reward_timeline = np.zeros((MAX_EPISODES))
+        self.state_timeline = np.zeros((MAX_EPISODES), dtype=int)
 
         # Instantaneous Loss 
         self.instantaneous_loss = np.zeros((MAX_EPISODES))
@@ -277,8 +279,8 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Update reward timeline for instanteneous loss, all rewards recieved in one array
 
         '''
-        self.reward_timeline[step][0] = reward
-        self.reward_timeline[step][1] = state
+        self.reward_timeline[step] = reward
+        self.state_timeline[step] = state
 
 
     def calculate_instantaneous_loss(self):
@@ -286,17 +288,15 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Use the reward time line and the optimal Q values to calculate the instanteneous loss
 
         '''
-        self.future_rewards = np.zeros((MAX_EPISODES))
+        future_rewards = np.zeros((MAX_EPISODES))
 
-        self.future_rewards[MAX_EPISODES-1] = self.reward_timeline[MAX_EPISODES-1][0]
-        laststate = int(self.reward_timeline[MAX_EPISODES-1][1])
-        self.instantaneous_loss[MAX_EPISODES-1] = np.max(self.env_Q[laststate])
+        future_rewards[MAX_EPISODES - 1] = self.reward_timeline[MAX_EPISODES - 1]
+        self.instantaneous_loss[MAX_EPISODES - 1] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]])
 
 
-        for i in range(MAX_EPISODES-2,0,-1):
-            self.future_rewards[i] = self.reward_timeline[i][0] + GAMMA * self.future_rewards[i+1]
-            currentepisode = int(self.reward_timeline[i][1])
-            self.instantaneous_loss[i] = np.max(self.env_Q[currentepisode]) - self.future_rewards[i]            
+        for i in range(MAX_EPISODES - 2, 0, -1):
+            future_rewards[i] = self.reward_timeline[i] + GAMMA * future_rewards[i + 1]
+            self.instantaneous_loss[i] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]]) - future_rewards[i]            
 
         return self.instantaneous_loss
 
