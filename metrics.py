@@ -289,13 +289,13 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         self.future_rewards = np.zeros((MAX_EPISODES))
 
         self.future_rewards[MAX_EPISODES-1] = self.reward_timeline[MAX_EPISODES-1][0]
-        laststate = self.reward_timeline[MAX_EPISODES-1][1]
-        self.instantaneous_loss[MAX_EPISODES-1] = np.max(self.env_Q[laststate]) - self.future_rewards[MAX_EPISODES-1]
+        laststate = int(self.reward_timeline[MAX_EPISODES-1][1])
+        self.instantaneous_loss[MAX_EPISODES-1] = np.max(self.env_Q[laststate])
 
 
         for i in range(MAX_EPISODES-2,0,-1):
             self.future_rewards[i] = self.reward_timeline[i][0] + GAMMA * self.future_rewards[i+1]
-            currentepisode = self.reward_timeline[i][1]
+            currentepisode = int(self.reward_timeline[i][1])
             self.instantaneous_loss[i] = np.max(self.env_Q[currentepisode]) - self.future_rewards[i]            
 
         return self.instantaneous_loss
