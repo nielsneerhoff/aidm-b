@@ -200,7 +200,7 @@ class MBIE_EB(ModelBasedLearner):
 
     def __init__(self, nS, nA, m, beta, delta_t = DELTA_T, delta_r = DELTA_R):
         self.beta = beta
-        super(MBIE_EB, self).__init__(nS, nS, m, delta_t, delta_r)
+        super(MBIE_EB, self).__init__(nS, nA, m, delta_t, delta_r)
 
     def q_value(self, state, action):
         """

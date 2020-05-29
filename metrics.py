@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from utils import *
 
 class Metrics:
     '''
@@ -7,10 +8,10 @@ class Metrics:
 
     '''
 
-    def __init__(self, agent):
+    def __init__(self, agent, env):
 
         # Environment
-        self.env = agent.env
+        self.env = env
 
         # Agent
         self.agent = agent
@@ -175,7 +176,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Q_old = np.ones((self.env.nS, self.env.nA))
         while True:
             Q_new = np.array([[self.env_mean_reward[state][action] + \
-                self.agent.gamma * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
+                GAMMA * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
                     for action in range(self.env.nA)] \
                         for state in range(self.env.nS)])
             if np.sum(np.abs(Q_old - Q_new)) < delta:
