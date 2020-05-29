@@ -39,6 +39,9 @@ class Metrics:
         self.KL_divergence_R = np.zeros((self.env.nS, self.env.nA))
         self.__init_KL_divergence()
 
+        # Q-value of optimal policy
+        self.env_Q = self.__value_iteration_env()
+        
         # Max policy env
         self.env_max_policy = self.__get_env_max_policy()
 
@@ -54,19 +57,12 @@ class Metrics:
         self.hit_zero_sample_complexity = False
         self.zero_sample_complexity_steps = -1
 
-        # # Exploration metric
-        # self.exploration = np.zeros((self.env.nS, self.env.nA))
+        # Reward and State timeline for instantaneous loss calculation
+        self.reward_timeline = np.zeros((MAX_EPISODES))
+        self.state_timeline = np.zeros((MAX_EPISODES), dtype=int)
 
-        # # Exploitation metric
-        # self.exploitation = np.zeros((self.env.nS, self.env.nA))
-
-        # Coverage error
-        # self.coverage_error_update_function = {
-        #     'discrete' : self.__update_coverage_error_squared,
-        #     'uniform' : self.__update_coverage_error_distribution,
-        #     'distribution' : self.__update_coverage_error_uniform
-        # }[distribution]
-
+        # Instantaneous Loss 
+        self.instantaneous_loss = np.zeros((MAX_EPISODES))
 
     def __str__(self):
         '''
@@ -118,10 +114,39 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
 
         # updates sample complexity, how far from the optimal policy
         self.__update_sample_complexity(step)
-        
 
+        # update the time line of the rewards for the instantaneous loss
+        self.__update_reward_timeline(reward, step, state)
+
+
+    def calculate_instantaneous_loss(self):
+        '''
+        Use the reward time line and the optimal Q values to calculate the instanteneous loss
+
+        '''
+        future_rewards = np.zeros((MAX_EPISODES))
+
+        future_rewards[MAX_EPISODES - 1] = self.reward_timeline[MAX_EPISODES - 1]
+        self.instantaneous_loss[MAX_EPISODES - 1] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]])
+
+
+        for i in reversed(range(MAX_EPISODES - 1)):
+            future_rewards[i] = self.reward_timeline[i] + GAMMA * future_rewards[i + 1]
+            self.instantaneous_loss[i] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]]) - future_rewards[i]            
+
+        return self.instantaneous_loss
+
+    def get_instantaneous_loss(self, step):
+        '''
+        get the instantenous loss at a specific time step
+        
+        '''
+        return self.instantaneous_loss[step]
+
+
+        
     ### ''' Private Initializer Methods ''' ###
-    
+            
 
     def __get_transition_function(self):
         '''
@@ -164,7 +189,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Get optimal policy of the environment
 
         '''
-        return np.argmax(self.__value_iteration_env(), axis = 1)
+        return np.argmax(self.env_Q, axis = 1)
 
 
 
@@ -260,36 +285,11 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
             self.zero_sample_complexity_steps = step
 
 
+    def __update_reward_timeline(self, reward, step, state):
+        '''
+        Update reward timeline for instanteneous loss, all rewards recieved in one array
 
-    # def __update_coverage_error_distribution(self):
-    #     '''
-    #     Update coverage error distribution
-
-    #     '''
-    #     pass
-
-
-    # def __update_exploration(self, reward):
-    #     '''
-    #     Update cumulative reward
-
-    #     '''
-    #     self.cumulative_reward += reward
-
-
-    # def __update_exploitation(self, reward):
-    #     '''
-    #     Update exploitation
-
-    #     '''
-    #     self.cumulative_reward += reward
-
-
-    # def __update_coverage_error_uniform(self):
-    #     '''
-    #     Update coverage error uniform
-
-    #     '''
-    #     pass
-
+        '''
+        self.reward_timeline[step] = reward
+        self.state_timeline[step] = state
 
