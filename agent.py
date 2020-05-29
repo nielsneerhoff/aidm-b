@@ -118,14 +118,9 @@ class ModelBasedLearner:
 
         """
 
-        # Delta's used for experiment here delta_r = A
-        # if np.sum(self.n[state][action]) > 0:
-        #     return self.delta_r * (self.env.rmax/np.sqrt(np.sum(self.n[state][action])))
-        # return self.delta_r * self.env.rmax
-
         return np.sqrt(
             np.log(2 / DELTA_R) / (
-            2 * np.sum(self.n[state][action]))) * self.max_reward
+            2 * np.sum(self.n[state][action]))) * self.max_reward / 2
 
     def epsilon_t(self, state, action):
         """
@@ -133,14 +128,8 @@ class ModelBasedLearner:
 
         """
 
-        # Delta's used for experiment here delta_t = B
-        # if np.sum(self.n[state][action]) > 0:
-        #     return self.delta_t * (1/np.sqrt(np.sum(self.n[state][action])))
-        # return  self.delta_t
-
         # Note, I suppose there is a mistake in the paper (equation 5).
-        return np.sqrt(
-            (2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T))
+        return np.sqrt((2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T))
             / np.sum(self.n[state][action]))
 
 class MBIE(ModelBasedLearner):
@@ -163,7 +152,6 @@ class MBIE(ModelBasedLearner):
             # Pick right-tail upper confidence bound on reward.
             epsilon_r = self.epsilon_r(state, action)
             max_R = self.R[state][action] + epsilon_r
-            # print(state, action, max_R, (10000 / scale), scale)
 
             T_max = self.upper_transition_distribution(state, action)
 
