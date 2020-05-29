@@ -21,15 +21,15 @@ def learn_online(env, agent, mediator):
         cum_reward += reward
         agent.process_experience(state, action, new_state, reward, done)
         agent.value_iteration(MAX_ITERATIONS, DELTA)
-        metrics_eb.update_metrics(state, action, reward, i)
+        metrics.update_metrics(state, action, reward, i)
         state = new_state
         if i % 100 == 0:
             agent_model = agent.learned_model()
             mediator_action = mediator.select_action(state, agent_model)
             print('Iteration', i, '\t', agent.max_policy(), '\t', agent.Q)
-            print(metrics_eb)
-            # print(metrics_eb.instantaneous_loss)
-    metrics_eb.calculate_instantaneous_loss()
+            print(metrics)
+    metrics.calculate_instantaneous_loss()
+    print(metrics.instantaneous_loss)
     return agent.Q, cum_reward
 
 # Initialize agents.
@@ -44,7 +44,7 @@ expert = BoundedParameterExpert(expert_model)
 mediator = Mediator(expert)
 
 # Initialize metrics
-metrics_eb = Metrics(mbie_eb_agent, env)
+metrics = Metrics(mbie_eb_agent, env)
 
 # expert.value_iteration()
 print(learn_online(env, mbie_eb_agent, mediator))
