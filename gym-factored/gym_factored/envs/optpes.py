@@ -42,7 +42,7 @@ class OptPes(DiscreteEnv):
         #State 0
         t[0, ACTION0, 1] = 0.7
         t[0, ACTION0, 2] = 0.3
-        t[0, ACTION1, 3] = 0.7  
+        t[0, ACTION1, 3] = 0.7
         t[0, ACTION1, 4] = 0.3
 
 
