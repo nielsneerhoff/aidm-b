@@ -35,4 +35,16 @@ def delta_t(nS, nA, delta, m):
     Returns delta_t such that all CIs are admissable (see lemma 5 of paper).
 
     """
+
     return delta / (2 * nS, nA, m)
+
+def m(nS, delta):
+    """
+    This is equation 12 of the paper, but with delta_r and delta_t replaced
+    by a common constant epsilon, and tau replaced by delta.
+
+    """
+
+    return np.maximum(
+        8 * (np.log(np.power(2, nS) - 2) - np.log(delta)) / np.power(delta, 2),
+        2 * np.log(2 / delta) / np.power(delta, 2))
