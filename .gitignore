@@ -1,4 +1,6 @@
 # Environments
 .vscode
 
-__pycache__
+# Cache
+__pycache__/*
+*.pyc
