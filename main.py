@@ -27,7 +27,6 @@ def learn_online(env, agent):
             agent.value_iteration(MAX_ITERATIONS, DELTA)
             # action = mediator.select_action(state, agent_model)
             # mediator_action = mediator.select_action(state, agent_model)
-            print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
             # print(metrics_eb)
     return agent.Q, cum_reward
 
@@ -43,7 +42,7 @@ mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 # T_low[0, 1, 3] = 0.4
 # T_high = T.copy()
 
-# R = expected_rewards(env)
+# R = expected_rewards(env)     
 # expert_model = HighLowModel(T_low, T_high, R)
 
 # expert_model = OffsetModel.from_env(env, 0.2)

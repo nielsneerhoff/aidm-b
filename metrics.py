@@ -20,7 +20,7 @@ class Metrics:
         self.start_time = time.time()
 
         # Cumulative reward received
-        self.cumulative_reward = 0.
+        self.cumulative_rewards = np.zeros((MAX_EPISODES))
 
         # Transition Function Environment
         self.env_T = self.__get_transition_function()
@@ -38,6 +38,8 @@ class Metrics:
         self.KL_divergence_T = np.zeros((self.env.nS, self.env.nA))
         self.KL_divergence_R = np.zeros((self.env.nS, self.env.nA))
         self.__init_KL_divergence()
+        self.KL_divergence_T_sum = np.zeros((MAX_EPISODES))
+        self.KL_divergence_R_sum = np.zeros((MAX_EPISODES))
 
         # Q-value of optimal policy
         self.env_Q = self.__value_iteration_env()
@@ -49,8 +51,8 @@ class Metrics:
         self.agent_max_policy = self.agent.max_policy()
 
         # Coverage error transition probabilities and expected reward
-        self.coverage_error_squared_T = 0.
-        self.coverage_error_squared_R = 0.
+        self.coverage_error_squared_T = np.zeros((MAX_EPISODES))
+        self.coverage_error_squared_R = np.zeros((MAX_EPISODES))
 
         # Sample Complexity Metric
         self.sample_complexity = 0
@@ -60,6 +62,7 @@ class Metrics:
         # Reward and State timeline for instantaneous loss calculation
         self.reward_timeline = np.zeros((MAX_EPISODES))
         self.state_timeline = np.zeros((MAX_EPISODES), dtype=int)
+        self.future_rewards = np.zeros((MAX_EPISODES))
 
         # Instantaneous Loss 
         self.instantaneous_loss = np.zeros((MAX_EPISODES))
@@ -98,25 +101,44 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
 
         '''
         # updates cumulative reward
-        self.__update_cumulative_reward(reward)
+        self.__update_cumulative_reward(step, reward)
         
         # updates history of rewards and standard deviation of rewards
         self.__update_std_reward(state, action, reward)
         
         # updates reward and transition error squared
-        self.__update_coverage_error_squared()
+        self.__update_coverage_error_squared(step)
 
         # updates KL divergence metric for transitions and rewards
-        self.__update_KL_divergence(state, action)
+        self.__update_KL_divergence(step, state, action)
 
         # updates max policy of agent
         self.__update_max_policy_agent()
 
-        # updates sample complexity, how far from the optimal policy
-        self.__update_sample_complexity(step)
-
         # update the time line of the rewards for the instantaneous loss
         self.__update_reward_timeline(reward, step, state)
+
+    def calculate_sample_complexity(self, epsilon=1e-01):
+        '''
+        Update sample complexity
+        Computed as the count of differences between best policy and current policy -> 0 is best
+
+        '''
+        self.calculate_instantaneous_loss()
+
+        Q_old = np.zeros((self.env.nS, self.env.nA))
+        counter = 0
+        for i in reversed(range(MAX_EPISODES)):
+            Q_new = np.array([[self.env_mean_reward[state][action] + \
+                GAMMA * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
+                    for action in range(self.env.nA)] \
+                        for state in range(self.env.nS)])
+            V_opt = np.max(self.Q_new[self.state_timeline[i]])
+            V_pol = self.future_rewards[i]
+            if V_opt-V_pol > epsilon:
+                counter = counter + 1
+            Q_old = Q_new
+        return counter
 
 
     def calculate_instantaneous_loss(self):
@@ -124,15 +146,14 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Use the reward time line and the optimal Q values to calculate the instanteneous loss
 
         '''
-        future_rewards = np.zeros((MAX_EPISODES))
 
-        future_rewards[MAX_EPISODES - 1] = self.reward_timeline[MAX_EPISODES - 1]
-        self.instantaneous_loss[MAX_EPISODES - 1] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]])
+        self.future_rewards[MAX_EPISODES - 1] = self.reward_timeline[MAX_EPISODES - 1]
+        self.instantaneous_loss[MAX_EPISODES - 1] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]]) - self.future_rewards[MAX_EPISODES-1]   
 
 
         for i in reversed(range(MAX_EPISODES - 1)):
-            future_rewards[i] = self.reward_timeline[i] + GAMMA * future_rewards[i + 1]
-            self.instantaneous_loss[i] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]]) - future_rewards[i]            
+            self.future_rewards[i] = self.reward_timeline[i] + GAMMA * self.future_rewards[i + 1]
+            self.instantaneous_loss[i] = np.max(self.env_Q[self.state_timeline[i]]) - self.future_rewards[i]            
 
         return self.instantaneous_loss
 
@@ -212,12 +233,15 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
     ### ''' Private Updater Methods ''' ###
 
 
-    def __update_cumulative_reward(self, reward):
+    def __update_cumulative_reward(self, step, reward):
         '''
         Update cumulative reward.
 
         '''
-        self.cumulative_reward += reward
+        if step == 0:
+            self.cumulative_reward[step] = reward
+        else:
+            self.cumulative_reward[step] = reward + self.cumulative_rewards[step-1]
 
 
     def __update_std_reward(self, state, action, reward):
@@ -231,17 +255,17 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
             self.std_reward[state][action] = 0.
 
     
-    def __update_coverage_error_squared(self):
+    def __update_coverage_error_squared(self, step):
         '''
         Update discrete coverage error.
         Returns the squared error of 
 
         '''
-        self.coverage_error_squared_T = np.sum(np.square(self.agent.T - self.env_T))
-        self.coverage_error_squared_R = np.sum(np.square(self.agent.R - self.env_mean_reward))
+        self.coverage_error_squared_T[step] = np.sum(np.square(self.agent.T - self.env_T))
+        self.coverage_error_squared_R[step] = np.sum(np.square(self.agent.R - self.env_mean_reward))
 
 
-    def __update_KL_divergence(self, state, action):
+    def __update_KL_divergence(self, step, state, action):
         '''
         Updates KL divergence metric for transitions
 
@@ -261,7 +285,15 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
                 self.KL_divergence_R[state][action] = np.log(self.env_std_reward[state][action] / self.std_reward[state][action]) + \
                     (np.square(self.std_reward[state][action]) + np.square(self.agent.R[state][action] - self.env_mean_reward[state][action])) / \
                         (2 * np.square(self.env_std_reward[state][action])) - 0.5
+        if np.isinf(np.sum(self.KL_divergence_R)):
+            self.KL_divergence_R_sum[step] = 2**30
+        else:
+            self.KL_divergence_R_sum[step] = np.sum(self.KL_divergence_R)
 
+        if np.isinf(np.sum(self.KL_divergence_T)):
+            self.KL_divergence_T_sum[step] = 2**30
+        else:
+            self.KL_divergence_T_sum[step] = np.sum(self.KL_divergence_T)
 
     def __update_max_policy_agent(self):
         '''
@@ -270,21 +302,6 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         self.agent_max_policy = self.agent.max_policy()
 
-
-    def __update_sample_complexity(self, step, epsilon=1e-01):
-        '''
-        Update sample complexity
-        Computed as the count of differences between best policy and current policy -> 0 is best
-
-        '''
-        self.sample_complexity = np.count_nonzero(self.agent_max_policy == self.env_max_policy)
-        percentage_correct = self.sample_complexity / self.agent_max_policy.shape[0]
-
-        if not self.hit_zero_sample_complexity and percentage_correct > 1-epsilon:
-            self.hit_zero_sample_complexity = True
-            self.zero_sample_complexity_steps = step
-
-
     def __update_reward_timeline(self, reward, step, state):
         '''
         Update reward timeline for instanteneous loss, all rewards recieved in one array
@@ -292,4 +309,3 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         self.reward_timeline[step] = reward
         self.state_timeline[step] = state
-
