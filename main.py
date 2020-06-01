@@ -27,6 +27,7 @@ def learn_online(env, agent):
             agent.value_iteration(MAX_ITERATIONS, DELTA)
             # action = mediator.select_action(state, agent_model)
             # mediator_action = mediator.select_action(state, agent_model)
+            print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
             # print(metrics_eb)
     return agent.Q, cum_reward
 

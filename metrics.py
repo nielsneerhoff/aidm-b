@@ -74,7 +74,7 @@ class Metrics:
         '''
         return f'''
 Timer: {self.get_runtime()}
-Cumulative reward: {self.cumulative_reward}
+Cumulative reward: {self.cumulative_rewards}
 Max policy: {self.agent_max_policy}
 KL divergence transition distribution:\n{self.KL_divergence_T}
 KL divergence reward distribution:\n{self.KL_divergence_R}
@@ -133,7 +133,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
                 GAMMA * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
                     for action in range(self.env.nA)] \
                         for state in range(self.env.nS)])
-            V_opt = np.max(self.Q_new[self.state_timeline[i]])
+            V_opt = np.max(Q_new[self.state_timeline[i]])
             V_pol = self.future_rewards[i]
             if V_opt-V_pol > epsilon:
                 counter = counter + 1
@@ -202,7 +202,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         for state in range(self.env.nS):
             for action in range(self.env.nA):
-                self.__update_KL_divergence(state, action)
+                self.__update_KL_divergence(0, state, action)
 
 
     def __get_env_max_policy(self):
@@ -239,9 +239,9 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
 
         '''
         if step == 0:
-            self.cumulative_reward[step] = reward
+            self.cumulative_rewards[step] = reward
         else:
-            self.cumulative_reward[step] = reward + self.cumulative_rewards[step-1]
+            self.cumulative_rewards[step] = reward + self.cumulative_rewards[step-1]
 
 
     def __update_std_reward(self, state, action, reward):
