@@ -17,6 +17,7 @@ class SixArmsEnv(DiscreteEnv):
     """
 
     def __init__(self):
+        self.reward_range = 0, 6000
         ns = 7
         na = 6 
         terminal_states = np.zeros(ns, dtype=bool)

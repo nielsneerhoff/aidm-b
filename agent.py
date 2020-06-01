@@ -8,16 +8,16 @@ from pseudo_env import HighLowModel
 from utils import GAMMA, DELTA_R, DELTA_T
 
 class ModelBasedLearner:
-    def __init__(self, nS, nA, m, max_reward):
+    def __init__(self, nS, nA, m, R_range):
 
+        # Env basics. R_range is tuple of min reward, max reward of env.
         self.nS, self.nA = nS, nA
-
-        self.max_reward = max_reward
+        self.R_range = R_range
 
         self.m = m
 
         # Stores current state value estimates.
-        self.Q = np.ones((nS, nA)) * max_reward / (1 - GAMMA) # Optimistic.
+        self.Q = np.ones((nS, nA)) * R_range[1] / (1 - GAMMA) # Optimistic.
 
         # Stores # times s, a , s' was observed.
         self.n = np.zeros((nS, nA, nS))
@@ -28,7 +28,8 @@ class ModelBasedLearner:
 
     def process_experience(self, state, action, next_state, reward, done):
         """
-        Update the transition probabilities and rewards based on the state, action, next state and reward.
+        Update the transition probabilities and rewards based on the state, 
+        action, next state and reward.
 
         """
 
@@ -73,17 +74,6 @@ class ModelBasedLearner:
 
         return np.argmax(self.Q, axis = 1)
 
-    def reset(self):
-        """
-        Places the agent back on start state.
-
-        """
-
-        if random.uniform(0, 1) > 0.5:
-            return 1
-        else:
-            return 2
-
     def learned_model(self):
         """
         Returns a pseudo env as learned by agent. The pseudo env consists of
@@ -114,22 +104,24 @@ class ModelBasedLearner:
 
     def epsilon_r(self, state, action):
         """
-        Returns the epsilon determining confidence interval for the reward distribution (eq. 2 of paper).
+        Returns the epsilon determining confidence interval for the reward
+        distribution (eq. 2 of paper). Adapted to fit Hoeffding bound.
 
         """
 
         return np.sqrt(
-            np.log(2 / DELTA_R) / (
-            2 * np.sum(self.n[state][action]))) * self.max_reward / 2
+            np.log(2 / DELTA_R) / (2 * np.sum(self.n[state][action]))) * (self.R_range[1] - self.R_range[0])
 
     def epsilon_t(self, state, action):
         """
-        Returns the epsilon determining confidence interval for the transition probability distribution (eq. 5 of paper).
+        Returns the epsilon determining confidence interval for the transition
+        probability distribution (eq. 5 of paper).
 
         """
 
         # Note, I suppose there is a mistake in the paper (equation 5).
-        return np.sqrt((2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T))
+        return np.sqrt(
+            (2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T))
             / np.sum(self.n[state][action]))
 
 class MBIE(ModelBasedLearner):
@@ -138,8 +130,8 @@ class MBIE(ModelBasedLearner):
 
     """
 
-    def __init__(self, nS, nA, m, max_reward):
-        super().__init__(nS, nA, m, max_reward)
+    def __init__(self, nS, nA, m, R_range):
+        super().__init__(nS, nA, m, R_range)
 
     def q_value(self, state, action):
         """
@@ -158,11 +150,12 @@ class MBIE(ModelBasedLearner):
             # Return Q accordingly.
             return max_R + GAMMA * np.dot(T_max, np.max(self.Q, axis = 1))
         else:
-            return self.max_reward / (1 - GAMMA) # See paper below eq. 6.
+            return self.R_range[1] / (1 - GAMMA) # See paper below eq. 6.
 
     def upper_transition_distribution(self, state, action):
         """
-        Finds upper-bound CI probability distribution maximizing expected Q value for state and action.
+        Finds upper-bound CI probability distribution maximizing expected Q
+        value for state and action.
 
         """
 
@@ -192,9 +185,9 @@ class MBIE_EB(ModelBasedLearner):
 
     """
 
-    def __init__(self, nS, nA, m, beta, max_reward):
+    def __init__(self, nS, nA, m, beta, R_range):
         self.beta = beta
-        super(MBIE_EB, self).__init__(nS, nA, m, max_reward)
+        super(MBIE_EB, self).__init__(nS, nA, m, R_range)
 
     def q_value(self, state, action):
         """

@@ -14,7 +14,7 @@ class OptPes(DiscreteEnv):
     """
 
     def __init__(self):
-        self.rmax = 1000000
+        self.reward_range = 0, 1000000
         ns = 5
         na = 2 
         terminal_states = np.zeros(ns, dtype=bool)

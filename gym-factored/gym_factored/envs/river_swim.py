@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import random
 from gym.envs.toy_text.discrete import DiscreteEnv
 
 LEFT = 0
@@ -17,7 +18,7 @@ class RiverSwimEnv(DiscreteEnv):
     """
 
     def __init__(self):
-        self.rmax = 10000
+        self.reward_range = 0, 10000
         ns = 6
         na = 2  # left and right
         # The first and last states are terminal states
@@ -70,8 +71,16 @@ class RiverSwimEnv(DiscreteEnv):
         t[ns - 1, RIGHT, ns - 1] = 0.3
         return t
 
-    def render(self, mode='human'):
-        pass
+    def reset(self):
+        """
+        Places the agent back on start state.
+
+        """
+
+        if random.uniform(0, 1) > 0.5:
+            return 1
+        else:
+            return 2
 
     # def step(self, a):
     #     res = super().step(a)
