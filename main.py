@@ -57,9 +57,16 @@ expert = BoundedParameterExpert(expert_model)
 mediator = Mediator(expert)
 
 # Initialize metrics.
+# expert.value_iteration()
+
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
+
+print(learn_online(env, mbie_agent, mediator, mbie_metrics))
+
+
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 
-# expert.value_iteration()
-print(learn_online(env, mbie_agent, mediator, mbie_eb_metrics))
-write_metrics_to_file([mbie_eb_metrics], 'Output')
+print(learn_online(env, mbie_eb_agent, mediator, mbie_eb_metrics))
+
+
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'output')
