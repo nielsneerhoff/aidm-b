@@ -7,7 +7,7 @@ from expert import BoundedParameterExpert
 from pseudo_env import OffsetModel, HighLowModel, expected_rewards
 from mediator import Mediator
 from utils import *
-from metrics import Metrics
+from metrics import Metrics, write_metrics_to_file
 
 env = gym.make("gym_factored:river-swim-v0")
 
@@ -57,3 +57,4 @@ mediator = Mediator(expert)
 
 # expert.value_iteration()
 print(learn_online(env, mbie_agent, mediator))
+# write_metrics_to_file([metrics_eb], 'OUTPUT', 'test_run')
