@@ -124,6 +124,112 @@ class ModelBasedLearner:
             (2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T))
             / np.sum(self.n[state][action]))
 
+    def upper_transition_distribution(self, state, action):
+        """
+        Finds upper-bound CI probability distribution maximizing expected Q
+        value for state and action.
+
+        """
+
+        current_T = self.T[state][action].copy() # Deep copy.
+        max_next_state = np.argmax(np.max(self.Q, axis = 1))
+        epsilon_t = self.epsilon_t(state, action)
+        # print('epsilon_t', state, action, epsilon_t)
+        current_T[max_next_state] += epsilon_t / 2
+
+        removed = 0 # Counts how much probability is removed.
+        while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
+            min_next_state = None
+            min_value = np.inf
+            for s, values in enumerate(self.Q):
+                if current_T[s] > 0 and np.max(values) < min_value:
+                    min_next_state = s
+                    min_value = np.max(values)
+            remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
+            current_T[min_next_state] -= remove
+            removed += remove
+
+        return current_T / np.linalg.norm(current_T, 1)
+
+    def _upper_transition_distribution(self, state, action, next_state):
+
+        current_T = self.T[state][action].copy() # Deep copy.
+        epsilon_t = self.epsilon_t(state, action)
+        current_T[next_state] += epsilon_t / 2
+
+        removed = 0 # Counts how much probability is removed.
+        while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
+            min_next_state = None
+            min_value = np.inf
+            for s, values in enumerate(self.Q):
+                if s != next_state and current_T[s] > 0 and np.max(values) < min_value:
+                    min_next_state = s
+                    min_value = np.max(values)
+            remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
+            current_T[min_next_state] -= remove
+            removed += remove
+
+        return current_T / np.linalg.norm(current_T, 1)
+
+    def _lower_transition_distribution(self, state, action, next_state):
+
+        current_T = self.T[state][action].copy() # Deep copy.
+        epsilon_t = self.epsilon_t(state, action)
+
+        if epsilon_t / 2 < current_T[next_state]:
+            # Want to go least to next state, so decrement probability.
+            current_T[next_state] -= epsilon_t / 2
+
+            added = 0 # Counts how much probability is removed.
+            while added < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
+                max_next_state = None
+                max_value = -np.inf
+                for s, values in enumerate(self.Q):
+                    if s != next_state and current_T[s] > 0 and np.max(values) > max_value:
+                        max_next_state = s
+                        max_value = np.max(values)
+                remove = np.minimum(current_T[max_next_state], epsilon_t / 2)
+                current_T[max_next_state] -= added
+                added += remove
+
+        return current_T / np.linalg.norm(current_T, 1)
+
+    def _learned_model(self):
+        """
+        Returns a pseudo env as learned by agent. The pseudo env consists of
+        lower and upper bounds for the transition probabilities, calculated
+        using the epsilon-confidence measure on the current distribution.
+
+        """
+
+        # If no experience, there is no model.
+        if np.sum(self.n) == 0:
+            return None
+
+        T_high = np.zeros((self.nS, self.nA, self.nS))
+        T_low = np.ones((self.nS, self.nA, self.nS))
+
+        # Form estimate lower/upper bound for each state, action.
+        for state in range(self.nS):
+            for action in range(self.nA):
+                for next_state in range(self.nS):
+                    epsilon_t = self.epsilon_t(state, action)
+                    print(state, action, epsilon_t < 1)
+                    if epsilon_t < 1:
+                        upper_bounds = np.maximum(
+                            self._upper_transition_distribution(state, action, next_state), T_high[state, action])
+                        lower_bounds = np.minimum(
+                            self._lower_transition_distribution(state, action, next_state), T_low[state, action])
+                    else:
+                        upper_bounds = np.ones(self.nS)
+                        lower_bounds = np.zeros(self.nS)
+
+                    T_high[state, action] = upper_bounds
+                    T_low[state, action] = lower_bounds
+
+        # For now assume rewards have no interval.
+        return HighLowModel(T_low, T_high, self.R)
+
 class MBIE(ModelBasedLearner):
     """
     MBIE agent.
@@ -154,33 +260,6 @@ class MBIE(ModelBasedLearner):
             # Made up version to account for n = 0 initialization.
             return np.sqrt(np.log(2 / DELTA_R) / 2) * (
                 self.R_range[1] - self.R_range[0]) / (1 - GAMMA)
-
-    def upper_transition_distribution(self, state, action):
-        """
-        Finds upper-bound CI probability distribution maximizing expected Q
-        value for state and action.
-
-        """
-
-        current_T = self.T[state][action].copy() # Deep copy.
-        max_next_state = np.argmax(np.max(self.Q, axis = 1))
-        epsilon_t = self.epsilon_t(state, action)
-        # print('epsilon_t', state, action, epsilon_t)
-        current_T[max_next_state] += epsilon_t / 2
-
-        removed = 0 # Counts how much probability is removed.
-        while removed < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
-            min_next_state = None
-            min_value = np.inf
-            for s, values in enumerate(self.Q):
-                if current_T[s] > 0 and np.max(values) < min_value:
-                    min_next_state = s
-                    min_value = np.max(values)
-            remove = np.minimum(current_T[min_next_state], epsilon_t / 2)
-            current_T[min_next_state] -= remove
-            removed += remove
-
-        return current_T / np.linalg.norm(current_T, 1)
 
 class MBIE_EB(ModelBasedLearner):
     """
