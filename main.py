@@ -57,5 +57,6 @@ metrics_eb = Metrics(mbie_eb_agent, env, 'MBIE_EB')
 metrics = Metrics(mbie_agent, env, 'MBIE')
 
 # expert.value_iteration()
-print(learn_online(env, mbie_agent, mediator))
+print(learn_online(env, mbie_agent, mediator, metrics))
+print(learn_online(env, mbie_eb_agent, mediator, metrics))
 write_metrics_to_file([metrics_eb, metrics], 'OUTPUT', 'test_run')

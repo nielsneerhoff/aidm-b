@@ -341,7 +341,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
         'instantaneous_loss' : ['episode', 'inst_loss']
     }
 
-    for metric in metrics:
+    for metric in metrics.keys():
         if not hasattr(list_of_metric_objects[0], metric):
             raise AttributeError(f"Metric '{metric}' is not an attribute")
 
@@ -352,9 +352,6 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
 
     for metric, headers in metrics.items():
 
-        os.chdir(BASE_PATH)
-        os.chdir(directory)
-
         header = headers[0] + '\t' + '\t'.join(f'{obj.name}_{headers[1]}' for obj in list_of_metric_objects)
 
         if os.path.exists(f'{prefix}_{metric}.dat'):
@@ -363,7 +360,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
         with open(f'{prefix}_{metric}.dat', "w") as f:
             f.write(header + '\n')
             for i in range(len(getattr(list_of_metric_objects[0], metric))):
-                data = '\t'.join(f'{round(getattr(obj, metric)[i], 5)}' for obj in list_of_metric_objects)
+                data = '\t\t'.join(f'{round(getattr(obj, metric)[i], 5)}' for obj in list_of_metric_objects)
                 f.write(f'{i+1}\t\t{data}\n')
         f.close()
     
