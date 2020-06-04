@@ -69,8 +69,6 @@ class Metrics:
 
         # Sample Complexity Metric
         self.sample_complexity = 0
-        self.hit_zero_sample_complexity = False
-        self.zero_sample_complexity_steps = -1
 
         # Reward and State timeline for instantaneous loss calculation
         self.reward_timeline = np.zeros((MAX_EPISODES))
@@ -156,7 +154,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
             if abs(V_opt-V_pol) > epsilon:
                 counter = counter + 1
             Q_old = Q_new
-        return counter
+        self.sample_complexity = counter
 
         
     ### ''' Private Initializer Methods ''' ###
@@ -328,7 +326,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         self.state_timeline[step] = state
 
 
-def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
+def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
     '''
     Write metrics to .dat file for vizualisation.
     list_of_metric_objects : list of metric objects, usually one per agent
@@ -365,10 +363,12 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
 
         header = headers[0] + '\t' + '\t'.join(f'{obj.name}_{headers[1]}' for obj in list_of_metric_objects)
 
-        if os.path.exists(f'{prefix}_{metric}.dat'):
-            os.remove(f'{prefix}_{metric}.dat')
+        filename = f'{metric}.dat' if prefix == '' else f'{prefix}_{metric}.dat'
 
-        with open(f'{prefix}_{metric}.dat', "w") as f:
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        with open(filename, "w") as f:
             f.write(header + '\n')
             for i in range(len(getattr(list_of_metric_objects[0], metric))):
                 data = '\t\t'.join(f'{round(getattr(obj, metric)[i], 5)}' for obj in list_of_metric_objects)

@@ -26,11 +26,15 @@ def learn_online(env, agent, mediator, metrics):
         if i % 100 == 0:
             agent.value_iteration(MAX_ITERATIONS, DELTA)
             print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
-            # agent_model = agent.learned_model()
+            # new_agent_model = agent._learned_model()
+            # print('NEW\n', new_agent_model.T_high)
+            # old_agent_model = agent.learned_model()
+            # print('OLD\n', old_agent_model.T_high)
             # if agent_model.T_high[0, 1, 3] - agent_model.T_low[0, 1, 3] < 0.3:
             #     action = mediator.select_action(state, agent_model)
                 # mediator_action = mediator.select_action(state, agent_model)
-                # print(metrics)
+                # print(metrics_eb)
+    metrics.calculate_sample_complexity()
     return agent.Q, cum_reward
 
 # Initialize agents.
@@ -53,10 +57,9 @@ expert = BoundedParameterExpert(expert_model)
 mediator = Mediator(expert)
 
 # Initialize metrics.
-metrics_eb = Metrics(mbie_eb_agent, env, 'MBIE_EB')
-metrics = Metrics(mbie_agent, env, 'MBIE')
+mbie_metrics = Metrics(mbie_agent, env, 'mbie')
+mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 
 # expert.value_iteration()
-print(learn_online(env, mbie_agent, mediator, metrics))
-print(learn_online(env, mbie_eb_agent, mediator, metrics))
-write_metrics_to_file([metrics_eb, metrics], 'OUTPUT', 'test_run')
+print(learn_online(env, mbie_agent, mediator, mbie_eb_metrics))
+write_metrics_to_file([mbie_eb_metrics], 'Output')
