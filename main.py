@@ -7,7 +7,7 @@ from expert import BoundedParameterExpert
 from pseudo_env import OffsetModel, HighLowModel, expected_rewards
 from mediator import Mediator
 from utils import *
-from metrics import Metrics, write_metrics_to_file
+from metrics import Metrics
 
 env = gym.make("gym_factored:river-swim-v0")
 
@@ -21,7 +21,7 @@ def learn_online(env, agent, mediator, metrics):
         # print(state, action, new_state)
         cum_reward += reward
         agent.process_experience(state, action, new_state, reward, done)
-        metrics.update_metrics(state, action, reward, i)
+        # metrics.update_metrics(state, action, reward, i)
         state = new_state
         if i % 101 == 0:
             agent.value_iteration(MAX_ITERATIONS, DELTA)
@@ -33,7 +33,8 @@ def learn_online(env, agent, mediator, metrics):
             # if agent_model.T_high[0, 1, 3] - agent_model.T_low[0, 1, 3] < 0.3:
             #     action = mediator.select_action(state, agent_model)
                 # mediator_action = mediator.select_action(state, agent_model)
-                # print(metrics)
+                # print(metrics_eb)
+    metrics.calculate_sample_complexity()
     return agent.Q, cum_reward
 
 # Initialize agents.
@@ -56,10 +57,7 @@ expert = BoundedParameterExpert(expert_model)
 mediator = Mediator(expert)
 
 # Initialize metrics.
-metrics_eb = Metrics(mbie_eb_agent, env, 'MBIE_EB')
-metrics = Metrics(mbie_agent, env, 'MBIE')
+metrics_eb = Metrics(mbie_eb_agent, env, 'mbie')
 
 # expert.value_iteration()
-print(learn_online(env, mbie_agent, mediator, metrics))
-print(learn_online(env, mbie_eb_agent, mediator, metrics))
-write_metrics_to_file([metrics_eb, metrics], 'OUTPUT', 'test_run')
+print(learn_online(env, mbie_agent, mediator, metrics_eb))
