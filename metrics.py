@@ -1,6 +1,9 @@
 import numpy as np
 import time
 from utils import *
+import pathlib
+import os
+import sys
 
 class Metrics:
     '''
@@ -37,9 +40,9 @@ class Metrics:
         # KL Convergence
         self.KL_divergence_T = np.zeros((self.env.nS, self.env.nA))
         self.KL_divergence_R = np.zeros((self.env.nS, self.env.nA))
-        self.__init_KL_divergence()
         self.KL_divergence_T_sum = np.zeros((MAX_EPISODES))
         self.KL_divergence_R_sum = np.zeros((MAX_EPISODES))
+        self.__init_KL_divergence()
 
         # Q-value of optimal policy
         self.env_Q = self.__value_iteration_env()
@@ -309,3 +312,48 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         self.reward_timeline[step] = reward
         self.state_timeline[step] = state
+
+    def write_metrics_to_file(self, directoy, identifier=''):
+        '''
+        Write metrics to .dat file for vizualisation.
+
+        '''
+        # Variable name : Headers           Var name must be exact match excl. 'self.'
+        metrics = {
+            'cumulative_rewards' : ['episode', 'reward'],
+            'reward_timeline' : ['episode', 'reward'],
+            'KL_divergence_T_sum' : ['episode', 'KL_div_T_sum'],
+            'KL_divergence_R_sum' : ['episode', 'KL_div_R_sum'],
+            'coverage_error_squared_T' : ['episode', 'cov_err_sq_T'],
+            'coverage_error_squared_R' : ['episode', 'cov_err_sq_R'],
+            'instantaneous_loss' : ['episode', 'inst_loss']
+        }
+
+
+        BASE_PATH = pathlib.Path(__file__).parent.absolute()
+        os.chdir(BASE_PATH)
+        if not os.path.exists(directoy):
+            os.mkdir(directoy)
+
+        for metric, headers in metrics.items():
+
+            os.chdir(BASE_PATH)
+            os.chdir(directoy)
+
+            header = '\t'.join(headers)
+
+            if os.path.exists(f'{identifier}_{metric}.dat'):
+                os.remove(f'{identifier}_{metric}.dat')
+
+            if not hasattr(locals()['self'], metric):
+                print(f'metric with name "self.{metric}" not found')
+            else:
+                with open(f'{identifier}_{metric}.dat', "w") as f:
+                    f.write(header + '\n')
+                    var = getattr(locals()['self'], metric)
+                    for i in range(len(var)):
+                        f.write(f'{i}\t\t{round(var[i], 6)}\n')
+                f.close()
+        
+        print('done writing')
+
