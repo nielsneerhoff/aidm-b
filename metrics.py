@@ -11,13 +11,20 @@ class Metrics:
 
     '''
 
-    def __init__(self, agent, env):
+    def __init__(self, agent, env, name):
+
+        # Check name
+        if not isinstance(name, str):
+            raise TypeError("parameter 'name' is not of type: string")
 
         # Environment
         self.env = env
 
         # Agent
         self.agent = agent
+
+        # Name for writing to file
+        self.name = name
 
         # Start Timer
         self.start_time = time.time()
@@ -313,47 +320,52 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         self.reward_timeline[step] = reward
         self.state_timeline[step] = state
 
-    def write_metrics_to_file(self, directoy, identifier=''):
-        '''
-        Write metrics to .dat file for vizualisation.
 
-        '''
-        # Variable name : Headers           Var name must be exact match excl. 'self.'
-        metrics = {
-            'cumulative_rewards' : ['episode', 'reward'],
-            'reward_timeline' : ['episode', 'reward'],
-            'KL_divergence_T_sum' : ['episode', 'KL_div_T_sum'],
-            'KL_divergence_R_sum' : ['episode', 'KL_div_R_sum'],
-            'coverage_error_squared_T' : ['episode', 'cov_err_sq_T'],
-            'coverage_error_squared_R' : ['episode', 'cov_err_sq_R'],
-            'instantaneous_loss' : ['episode', 'inst_loss']
-        }
+def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
+    '''
+    Write metrics to .dat file for vizualisation.
+    list_of_metric_objects : list of metric objects, usually one per agent
+    directory : Name of output directory
+    prefix : prefix of all output files
 
+    '''
+    # Variable name : Headers           Var name must be exact match excl. 'self.'
+    # First header is the index, others will be prefixed with agent name
+    metrics = {
+        'cumulative_rewards' : ['episode', 'reward'],
+        'reward_timeline' : ['episode', 'reward'],
+        'KL_divergence_T_sum' : ['episode', 'KL_div_T_sum'],
+        'KL_divergence_R_sum' : ['episode', 'KL_div_R_sum'],
+        'coverage_error_squared_T' : ['episode', 'cov_err_sq_T'],
+        'coverage_error_squared_R' : ['episode', 'cov_err_sq_R'],
+        'instantaneous_loss' : ['episode', 'inst_loss']
+    }
 
-        BASE_PATH = pathlib.Path(__file__).parent.absolute()
+    for metric in metrics:
+        if not hasattr(list_of_metric_objects[0], metric):
+            raise AttributeError(f"Metric '{metric}' is not an attribute")
+
+    BASE_PATH = pathlib.Path(__file__).parent.absolute()
+    os.chdir(BASE_PATH)
+    if not os.path.exists(directory):
+        os.mkdir(directory)
+
+    for metric, headers in metrics.items():
+
         os.chdir(BASE_PATH)
-        if not os.path.exists(directoy):
-            os.mkdir(directoy)
+        os.chdir(directory)
 
-        for metric, headers in metrics.items():
+        header = headers[0] + '\t' + '\t'.join(f'{obj.name}_{headers[1]}' for obj in list_of_metric_objects)
 
-            os.chdir(BASE_PATH)
-            os.chdir(directoy)
+        if os.path.exists(f'{prefix}_{metric}.dat'):
+            os.remove(f'{prefix}_{metric}.dat')
 
-            header = '\t'.join(headers)
-
-            if os.path.exists(f'{identifier}_{metric}.dat'):
-                os.remove(f'{identifier}_{metric}.dat')
-
-            if not hasattr(locals()['self'], metric):
-                print(f'metric with name "self.{metric}" not found')
-            else:
-                with open(f'{identifier}_{metric}.dat', "w") as f:
-                    f.write(header + '\n')
-                    var = getattr(locals()['self'], metric)
-                    for i in range(len(var)):
-                        f.write(f'{i}\t\t{round(var[i], 6)}\n')
-                f.close()
-        
-        print('done writing')
+        with open(f'{prefix}_{metric}.dat', "w") as f:
+            f.write(header + '\n')
+            for i in range(len(getattr(list_of_metric_objects[0], metric))):
+                data = '\t'.join(f'{round(getattr(obj, metric)[i], 5)}' for obj in list_of_metric_objects)
+                f.write(f'{i+1}\t\t{data}\n')
+        f.close()
+    
+    print('done writing')
 
