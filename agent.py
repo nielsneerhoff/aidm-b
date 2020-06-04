@@ -17,7 +17,7 @@ class ModelBasedLearner:
         self.m = m
 
         # Stores current state value estimates.
-        self.Q = np.ones((nS, nA)) * R_range[1] / (1 - GAMMA) # Optimistic.
+        self.Q = np.zeros((nS, nA))
 
         # Stores # times s, a , s' was observed.
         self.n = np.zeros((nS, nA, nS))
@@ -150,7 +150,10 @@ class MBIE(ModelBasedLearner):
             # Return Q accordingly.
             return max_R + GAMMA * np.dot(T_max, np.max(self.Q, axis = 1))
         else:
-            return self.R_range[1] / (1 - GAMMA) # See paper below eq. 6.
+            # return self.R_range[1] / (1 - GAMMA) # See paper below eq. 6.
+            # Made up version to account for n = 0 initialization.
+            return np.sqrt(np.log(2 / DELTA_R) / 2) * (
+                self.R_range[1] - self.R_range[0]) / (1 - GAMMA)
 
     def upper_transition_distribution(self, state, action):
         """
@@ -198,7 +201,7 @@ class MBIE_EB(ModelBasedLearner):
         if np.sum(self.n[state][action]) > 0:
             return self.R[state][action] + GAMMA * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
         else:
-            return self.max_reward / (1 - GAMMA) # See paper below eq. 6.
+            return self.R_range[1] / (1 - GAMMA) # See paper below eq. 6.
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))

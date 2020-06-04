@@ -14,11 +14,10 @@ class OptPes(DiscreteEnv):
     """
 
     def __init__(self):
-        self.reward_range = 0, 1000000
+        self.reward_range = 0, 3200
         ns = 5
         na = 2 
         terminal_states = np.zeros(ns, dtype=bool)
-        self.rmax = 200
 
         t = self.get_transition_function(na, ns)
         r = self.get_reward_function(na,ns)
@@ -73,17 +72,17 @@ class OptPes(DiscreteEnv):
 
 
         #State 1
-        r[1, ACTION0, 1] = 100
+        r[1, ACTION0, 1] = 3100
         
    
         #State 2
-        r[2, ACTION0, 2] = -1000
+        r[2, ACTION0, 2] = 2000
         
         #State 3
-        r[3, ACTION0, 3] = 200
+        r[3, ACTION0, 3] = 3200
 
         #State 4
-        r[4, ACTION0, 4] = -3000
+        r[4, ACTION0, 4] = 0
      
         return r
 

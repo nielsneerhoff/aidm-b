@@ -17,6 +17,40 @@ class PseudoEnv(DiscreteEnv):
         self.T_low, self.T_high = T_low, T_high
         self.R = R
 
+    def compare(self, state, action, other_pseudo_env):
+        """
+        
+
+        """
+
+        return self.T_low[state, action]
+
+    @staticmethod
+    def merge(pseudo_env_one, pseudo_env_two):
+        """
+        Returns a merged pseudo-env using tighest bounds for transition probabilities.
+
+        """
+
+        assert (pseudo_env_one.nS, pseudo_env_one.nA) == (pseudo_env_two.nS, pseudo_env_two.nA)
+
+        # Else, model is determined by mean plus and minus epsilon.
+        T_high = np.array((pseudo_env_one.T_high))
+        T_low = np.array((pseudo_env_one.T_low))
+        size_one = pseudo_env_one.T_high - pseudo_env_one.T_low
+        size_two = pseudo_env_two.T_high - pseudo_env_two.T_low
+
+        # Form estimate lower/upper bound for each state, action.
+        for state in range(pseudo_env_one.nS):
+            for action in range(pseudo_env_one.nA):
+                for next_state in range(pseudo_env_one.nS):
+                    if size_one[state, action, next_state] > size_two[state, action, next_state]:
+                        T_high[state, action, next_state] = pseudo_env_two.T_high[state, action, next_state]
+                        T_low[state, action, next_state] = pseudo_env_two.T_low[state, action, next_state]
+
+        # Ignore reward for now.
+        return PseudoEnv(pseudo_env_one.nS, pseudo_env_one.nA, T_low, T_high, pseudo_env_one.R)
+
 class HighLowModel(PseudoEnv):
     """
     Represents a pseudo env as defined by a low and high transition probability distribution.

@@ -1,4 +1,5 @@
 from expert import BoundedParameterExpert
+from pseudo_env import PseudoEnv
 
 class Mediator:
     """
@@ -22,11 +23,12 @@ class Mediator:
 
         """
 
-        if agent_model is not None:
-            # Magic.
-            agent = BoundedParameterExpert(agent_model)
-            agent.value_iteration()
-            return agent.select_action(state, 'pessimistic')
         # Base case.
-        else:
-            return self.expert.select_action(state, 'pessimistic')
+        expert = self.expert
+
+        if agent_model is not None:
+            merged_model = PseudoEnv.merge(agent_model, self.expert.env)
+            expert = BoundedParameterExpert(merged_model)
+            expert.value_iteration()
+
+        return expert.select_action(state, 'pessimistic')
