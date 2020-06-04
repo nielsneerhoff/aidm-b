@@ -39,7 +39,7 @@ class ModelBasedLearner:
             self.n[state][action][next_state] += 1
 
             # Adjust mean probability and reward estimate accordingly.
-            self.T[state][action] = self.n[state][action] / np.sum(self.n[state][action])
+            self.T[state][action] = (self.n[state][action]) / ( np.sum(self.n[state][action]))
             self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
 
     def select_action(self, state):

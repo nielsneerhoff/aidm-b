@@ -5,7 +5,7 @@ MAX_EPISODES = 5000
 GAMMA = 0.95
 DELTA = 0.01
 
-DELTA_T = 0.10
+DELTA_T = 0.05
 DELTA_R = 0.05
 
 def beta(nS, nA, m, delta, gamma):
