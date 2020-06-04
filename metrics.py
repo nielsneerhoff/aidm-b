@@ -29,6 +29,9 @@ class Metrics:
         # Start Timer
         self.start_time = time.time()
 
+        # Runtime
+        self.runtime = np.zeros((MAX_EPISODES))
+
         # Cumulative reward received
         self.cumulative_rewards = np.zeros((MAX_EPISODES))
 
@@ -102,7 +105,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Return runtime up until now.
 
         '''
-        return int(time.time() - self.start_time)
+        return round(time.time() - self.start_time, 5)
 
     
     def update_metrics(self, state, action, reward, step):
@@ -128,13 +131,18 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         # update the time line of the rewards for the instantaneous loss
         self.__update_reward_timeline(reward, step, state)
 
-    def calculate_sample_complexity(self, epsilon=1e-01):
+        # update passed runtime
+        self.__update_runtime(step)
+
+
+    def calculate_sample_complexity(self, epsilon=1e03):
         '''
         Update sample complexity
         Computed as the count of differences between best policy and current policy -> 0 is best
+        param epsilon : if difference between policies > epsilon then counter plus one
 
         '''
-        self.calculate_instantaneous_loss()
+        self.__calculate_instantaneous_loss()
 
         Q_old = np.zeros((self.env.nS, self.env.nA))
         counter = 0
@@ -145,35 +153,10 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
                         for state in range(self.env.nS)])
             V_opt = np.max(Q_new[self.state_timeline[i]])
             V_pol = self.future_rewards[i]
-            if V_opt-V_pol > epsilon:
+            if abs(V_opt-V_pol) > epsilon:
                 counter = counter + 1
             Q_old = Q_new
         return counter
-
-
-    def calculate_instantaneous_loss(self):
-        '''
-        Use the reward time line and the optimal Q values to calculate the instanteneous loss
-
-        '''
-
-        self.future_rewards[MAX_EPISODES - 1] = self.reward_timeline[MAX_EPISODES - 1]
-        self.instantaneous_loss[MAX_EPISODES - 1] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]]) - self.future_rewards[MAX_EPISODES-1]   
-
-
-        for i in reversed(range(MAX_EPISODES - 1)):
-            self.future_rewards[i] = self.reward_timeline[i] + GAMMA * self.future_rewards[i + 1]
-            self.instantaneous_loss[i] = np.max(self.env_Q[self.state_timeline[i]]) - self.future_rewards[i]            
-
-        return self.instantaneous_loss
-
-    def get_instantaneous_loss(self, step):
-        '''
-        get the instantenous loss at a specific time step
-        
-        '''
-        return self.instantaneous_loss[step]
-
 
         
     ### ''' Private Initializer Methods ''' ###
@@ -238,10 +221,34 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
             if np.sum(np.abs(Q_old - Q_new)) < delta:
                 return Q_new
             Q_old = Q_new
+
+
+    def __calculate_instantaneous_loss(self):
+        '''
+        Use the reward time line and the optimal Q values to calculate the instanteneous loss
+
+        '''
+
+        self.future_rewards[MAX_EPISODES - 1] = self.reward_timeline[MAX_EPISODES - 1]
+        self.instantaneous_loss[MAX_EPISODES - 1] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]]) - self.future_rewards[MAX_EPISODES-1]   
+
+
+        for i in reversed(range(MAX_EPISODES - 1)):
+            self.future_rewards[i] = self.reward_timeline[i] + GAMMA * self.future_rewards[i + 1]
+            self.instantaneous_loss[i] = np.max(self.env_Q[self.state_timeline[i]]) - self.future_rewards[i]            
+
+        return self.instantaneous_loss
         
 
     ### ''' Private Updater Methods ''' ###
 
+
+    def __update_runtime(self, step):
+        '''
+        Update runtime for current step.
+
+        '''
+        self.runtime[step] = self.get_runtime()
 
     def __update_cumulative_reward(self, step, reward):
         '''
@@ -332,6 +339,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
     # Variable name : Headers           Var name must be exact match excl. 'self.'
     # First header is the index, others will be prefixed with agent name
     metrics = {
+        'runtime' : ['episode', 'runtime'],
         'cumulative_rewards' : ['episode', 'reward'],
         'reward_timeline' : ['episode', 'reward'],
         'KL_divergence_T_sum' : ['episode', 'KL_div_T_sum'],
