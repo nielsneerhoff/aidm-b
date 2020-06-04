@@ -9,7 +9,7 @@ from mediator import Mediator
 from utils import *
 from metrics import Metrics
 
-env = gym.make("gym_factored:river-swim-v0")
+env = gym.make("gym_factored:optpes-v0")
 
 def learn_online(env, agent, mediator):
     state = env.reset()
@@ -18,22 +18,19 @@ def learn_online(env, agent, mediator):
     for i in range(MAX_EPISODES):
         action = agent.select_action(state)
         new_state, reward, done, info = env.step(action)
-        # print(state, action, new_state)
+        print(state, action, new_state)
         cum_reward += reward
         agent.process_experience(state, action, new_state, reward, done)
         # metrics_eb.update_metrics(state, action, reward, i)
         state = new_state
-        if i % 101 == 0:
+        if i % 11 == 0:
             agent.value_iteration(MAX_ITERATIONS, DELTA)
             print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
-            # new_agent_model = agent._learned_model()
-            # print('NEW\n', new_agent_model.T_high)
+            new_agent_model = agent._learned_model()
+            print('\nNEW HIGH\n', new_agent_model.T_high, '\nNEW LOW\n', new_agent_model.T_low)
             # old_agent_model = agent.learned_model()
-            # print('OLD\n', old_agent_model.T_high)
-            # if agent_model.T_high[0, 1, 3] - agent_model.T_low[0, 1, 3] < 0.3:
-            #     action = mediator.select_action(state, agent_model)
-                # mediator_action = mediator.select_action(state, agent_model)
-                # print(metrics_eb)
+            # print('\nOLD HIGH\n', old_agent_model.T_high, '\nOLD LOW\n', old_agent_model.T_low)
+            mediator_action = mediator.select_action(state, new_agent_model)
     return agent.Q, cum_reward
 
 # Initialize agents.

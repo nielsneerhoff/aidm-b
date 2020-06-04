@@ -177,13 +177,16 @@ class ModelBasedLearner:
         epsilon_t = self.epsilon_t(state, action)
 
         if epsilon_t / 2 < current_T[next_state]:
-            # Want to go least to next state, so decrement probability.
+            # Want to go least to next state, so we remove epsilon / 2 from
+            # this probability. This makes current_T not a probability 
+            # distribution, as it sums up to 1 + e / 2. However, next we will
+            # add exactly e / 2 probability from the other states iteratively.
             current_T[next_state] -= epsilon_t / 2
 
-            added = 0 # Counts how much probability is removed.
+            added = 0 # Counts how much probability is added.
             while added < epsilon_t / 2 and np.count_nonzero(current_T) > 1:
                 max_next_state = None
-                max_value = -np.inf
+                max_value = - np.inf
                 for s, values in enumerate(self.Q):
                     if s != next_state and current_T[s] > 0 and np.max(values) > max_value:
                         max_next_state = s
@@ -192,7 +195,11 @@ class ModelBasedLearner:
                 current_T[max_next_state] -= added
                 added += remove
 
-        return current_T / np.linalg.norm(current_T, 1)
+        # TODO: Maybe cover case where count non zero == 0.
+        if np.count_nonzero(current_T) > 1:
+            return current_T / np.linalg.norm(current_T, 1)
+        else:
+            return current_T
 
     def _learned_model(self):
         """
@@ -214,8 +221,7 @@ class ModelBasedLearner:
             for action in range(self.nA):
                 for next_state in range(self.nS):
                     epsilon_t = self.epsilon_t(state, action)
-                    print(state, action, epsilon_t < 1)
-                    if epsilon_t < 1:
+                    if epsilon_t < 2:
                         upper_bounds = np.maximum(
                             self._upper_transition_distribution(state, action, next_state), T_high[state, action])
                         lower_bounds = np.minimum(
