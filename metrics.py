@@ -352,6 +352,9 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix='test'):
 
     for metric, headers in metrics.items():
 
+        os.chdir(BASE_PATH)
+        os.chdir(directory)
+
         header = headers[0] + '\t' + '\t'.join(f'{obj.name}_{headers[1]}' for obj in list_of_metric_objects)
 
         if os.path.exists(f'{prefix}_{metric}.dat'):
