@@ -64,15 +64,18 @@ class BoundedParameterExpert:
         Q_pes_new = np.array(self.Q_pes)
         Q_pes_state_values = np.max(Q_pes_new, axis = 1)
 
-        # Sort on state lb's in increasing order.
-        Q_pes_lbs = Q_pes_state_values[:, 0]
-        permutation = np.argsort(Q_pes_lbs)
-        Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_lbs)
+         # Sort on state ub's in increasing order.
+        Q_pes_ubs = Q_pes_state_values[:, 1] ### ADDED
 
-         # Sort on state ub's in decreasing order.
-        Q_pes_ubs = Q_pes_state_values[:, 1]
-        permutation = np.argsort(Q_pes_ubs)[::-1][:self.env.nS]
+        # Sort on state lb's in decreasing order.
+        Q_pes_lbs = Q_pes_state_values[:, 0]
+        permutation = np.argsort(Q_pes_lbs)[::-1][:self.env.nS]
         Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_ubs)
+
+         # Sort on state ub's in increasing order.
+        Q_pes_ubs = Q_pes_state_values[:, 1]
+        permutation = np.argsort(Q_pes_ubs)
+        Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_lbs)
 
         return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
 
@@ -103,24 +106,3 @@ class BoundedParameterExpert:
         for p in permutation:
             Qnew[p] = self.env.R[p] + GAMMA * np.dot(F[p], q_values.T)
         return Qnew
-
-    def select_action(self, state, mode):
-        """
-        Returns a Pareto efficient action based on mode.
-
-        """
-
-        if mode is 'optimistic':
-
-            # TO DO: Sort on upper bound, then on lower bound.
-            Q_opt = self.Q_opt[state].copy()
-            best_q_value = Q_opt[:, 1].sort(kind = 'mergesort')[-1]
-            candidate_actions = Q_opt[:, 1].argsort(kind = 'mergesort')[-1]
-            return Q_opt[:, 1].argsort(kind = 'mergesort')[-1]
-
-        elif mode is 'pessimistic':
-
-            # TO DO: Sort on lower bound, then on upper bound.
-            Q_pes = self.Q_pes[state].copy()
-            best_q_value = Q_pes[:, 1].sort(kind = 'mergesort')[-1]
-            return Q_pes[:, 0].argsort(kind = 'mergesort')[-1]

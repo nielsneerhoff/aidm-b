@@ -1,3 +1,5 @@
+import numpy as np
+
 from expert import BoundedParameterExpert
 from pseudo_env import PseudoEnv
 
@@ -31,4 +33,17 @@ class Mediator:
             expert = BoundedParameterExpert(merged_model)
             expert.value_iteration()
 
-        return expert.select_action(state, 'pessimistic')
+            # Pick action that fall within 1 - strictness of pessimistic opt.
+            Q_pes = expert.Q_pes[state, :, 0].copy()
+            safe_q_value = np.sort(Q_pes)[-1]
+
+            if np.any(Q_pes > safe_q_value):
+                action = Q_pes.argmax()
+            else:
+                actions = np.arange(0, expert.env.nA, 1)
+                within_strictness = actions[
+                    Q_pes >= (1 - expert.strictness) * safe_q_value]
+                action = np.random.choice(within_strictness)
+            return action
+
+        return expert.select_action(state)
