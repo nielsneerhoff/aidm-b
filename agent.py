@@ -26,6 +26,23 @@ class ModelBasedLearner:
         self.T = np.ones((nS, nA, nS)) / (nS)
         self.R = np.zeros((nS, nA))
 
+
+    def reset(self):
+        '''
+        Reset the agent to the begin state for next run
+
+        '''
+        # Stores current state value estimates.
+        self.Q = np.zeros((self.nS, self.nA))
+
+        # Stores # times s, a , s' was observed.
+        self.n = np.zeros((self.nS, self.nA, self.nS))
+
+        # Stores transition probability estimates and reward estimates.
+        self.T = np.ones((self.nS, self.nA, self.nS)) / (self.nS)
+        self.R = np.zeros((self.nS, self.nA))
+
+
     def process_experience(self, state, action, next_state, reward, done):
         """
         Update the transition probabilities and rewards based on the state, 

@@ -12,30 +12,33 @@ from metrics import Metrics, write_metrics_to_file
 env = gym.make("gym_factored:river-swim-v0")
 
 def learn_online(env, agent, mediator, metrics):
-    state = env.reset()
-    cum_reward = 0
-    agent_model = None
-    for i in range(MAX_EPISODES):
-        action = agent.select_action(state)
-        new_state, reward, done, info = env.step(action)
-        # print(state, action, new_state)
-        cum_reward += reward
-        agent.process_experience(state, action, new_state, reward, done)
-        metrics.update_metrics(state, action, reward, i)
-        state = new_state
-        if i % 100 == 0:
+    for run in range(NO_RUNS):
+        agent.reset()
+        state = env.reset()
+        # cum_reward = 0
+        agent_model = None
+        metrics.start_runtime(run)
+        for i in range(MAX_EPISODES):
+            action = agent.select_action(state)
+            new_state, reward, done, info = env.step(action)
+            # print(state, action, new_state)
+            # cum_reward += reward
+            agent.process_experience(state, action, new_state, reward, done)
+            metrics.update_metrics(run, state, action, reward, i)
+            state = new_state
             agent.value_iteration(MAX_ITERATIONS, DELTA)
-            print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
-            # new_agent_model = agent._learned_model()
-            # print('NEW\n', new_agent_model.T_high)
-            # old_agent_model = agent.learned_model()
-            # print('OLD\n', old_agent_model.T_high)
-            # if agent_model.T_high[0, 1, 3] - agent_model.T_low[0, 1, 3] < 0.3:
-            #     action = mediator.select_action(state, agent_model)
-                # mediator_action = mediator.select_action(state, agent_model)
-                # print(metrics_eb)
-    metrics.calculate_sample_complexity()
-    return agent.Q, cum_reward
+            if i % 100 == 0:
+                print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
+                # new_agent_model = agent._learned_model()
+                # print('NEW\n', new_agent_model.T_high)
+                # old_agent_model = agent.learned_model()
+                # print('OLD\n', old_agent_model.T_high)
+                # if agent_model.T_high[0, 1, 3] - agent_model.T_low[0, 1, 3] < 0.3:
+                #     action = mediator.select_action(state, agent_model)
+                    # mediator_action = mediator.select_action(state, agent_model)
+                    # print(metrics_eb)
+        metrics.calculate_sample_complexity(run)
+    return agent.Q#, cum_reward
 
 # Initialize agents.
 m = 1000 # Model size could be infinite.
@@ -69,4 +72,4 @@ mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 print(learn_online(env, mbie_eb_agent, mediator, mbie_eb_metrics))
 
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'output')
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'test')
