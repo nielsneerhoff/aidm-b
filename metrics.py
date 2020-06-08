@@ -383,7 +383,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
             for i in range(len(getattr(list_of_metric_objects[0], metric)[0])):
                 data = '\t\t'.join(f'{round(np.mean(getattr(obj, metric), axis=0)[i], 5)}\t\t' + \
                     f'{round(np.mean(getattr(obj, metric), axis=0)[i] + np.std(getattr(obj, metric), axis=0)[i], 5)}\t\t' + \
-                        f'{np.mean(getattr(obj, metric), axis=0)[i] - round(np.std(getattr(obj, metric), axis=0)[i], 5)}' \
+                        f'{round(np.mean(getattr(obj, metric), axis=0)[i] - np.std(getattr(obj, metric), axis=0)[i], 5)}' \
                             for obj in list_of_metric_objects)
                 f.write(f'{i+1}\t\t{data}\n')
         f.close()
