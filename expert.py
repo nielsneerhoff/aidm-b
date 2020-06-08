@@ -2,9 +2,9 @@ import numpy as np
 
 from utils import MAX_ITERATIONS, DELTA, GAMMA
 
-class BoundedParameterExpert:
+class Expert:
     """
-    Represents the agent guided by the parameter intervals of the expert.
+    Represents an expert.
 
     """
 
@@ -106,3 +106,11 @@ class BoundedParameterExpert:
         for p in permutation:
             Qnew[p] = self.env.R[p] + GAMMA * np.dot(F[p], q_values.T)
         return Qnew
+
+    def safe_q_value(self, state):
+        """
+        Returns the 'safe' q-value: the optimal pessimistic q-value lower bound.
+
+        """
+
+        return self.Q_pes[state, :, 0].argsort()[-1]

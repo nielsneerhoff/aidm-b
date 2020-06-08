@@ -25,25 +25,30 @@ class Mediator:
 
         """
 
-        # Base case.
-        expert = self.expert
+        # Find safe q-value.
+        safe_q_value = self.expert.safe_q_value(state)
 
         if agent_model is not None:
+
+            # Combine the two models: we pick tightest T(s, a, s').
             merged_model = PseudoEnv.merge(agent_model, self.expert.env)
-            expert = BoundedParameterExpert(merged_model)
-            expert.value_iteration()
+            merged_expert = BoundedParameterExpert(merged_model)
+            merged_expert.value_iteration()
 
-            # Pick action that fall within 1 - strictness of pessimistic opt.
-            Q_pes = expert.Q_pes[state, :, 0].copy()
-            safe_q_value = np.sort(Q_pes)[-1]
+            Q_pes = merged_expert.Q_pes[state, :, 0]
 
+            # If merged model (i.e., agent) found higher q-value, greedy.
             if np.any(Q_pes > safe_q_value):
+                # TO DO: Sort on higher bound (if there is a tie!).
                 action = Q_pes.argmax()
-            else:
-                actions = np.arange(0, expert.env.nA, 1)
-                within_strictness = actions[
-                    Q_pes >= (1 - expert.strictness) * safe_q_value]
-                action = np.random.choice(within_strictness)
-            return action
+                return action
+        else:
+            Q_pes = self.expert.Q_pes[state, :, 0]
 
-        return expert.select_action(state)
+        # Else, pick action within 1 - strictness of pessimistic opt.
+        actions = np.arange(0, expert.env.nA, 1)
+        within_strictness = actions[
+            Q_pes >= (1 - expert.strictness) * safe_q_value]
+        action = np.random.choice(within_strictness)
+
+        return action

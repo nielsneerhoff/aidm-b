@@ -3,7 +3,7 @@ import numpy as np
 from sys import maxsize
 
 from agent import MBIE, MBIE_EB
-from expert import BoundedParameterExpert
+from expert import Expert
 from pseudo_env import OffsetModel, HighLowModel, expected_rewards
 from mediator import Mediator
 from utils import *
@@ -50,7 +50,7 @@ expert_model = HighLowModel(T_low, T_high, R)
 # expert_model = OffsetModel(T, 0.3, R)
 
 # expert_model = OffsetModel.from_env(env, 0.2)
-expert = BoundedParameterExpert(expert_model, 0.3)
+expert = Expert(expert_model, 0.3)
 mediator = Mediator(expert)
 
 # Initialize metrics.
