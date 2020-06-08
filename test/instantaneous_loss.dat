@@ -1,0 +1,6 @@
+episode	mbie_inst_loss_mean	mbie_inst_loss_std	mbie_eb_inst_loss_mean	mbie_eb_inst_loss_std
+1		101.39166		90.03704		46.19776		71.3299
+2		1.28606		1.96449		0.87994		2.63981
+3		1.35375		2.06789		0.92625		2.77875
+4		1.425		2.17672		0.475		1.425
+5		0.0		0.0		0.0		0.0

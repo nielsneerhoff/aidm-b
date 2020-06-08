@@ -122,5 +122,5 @@ class BoundedParameterExpert:
 
             # TO DO: Sort on lower bound, then on upper bound.
             Q_pes = self.Q_pes[state].copy()
-            best_q_value = Q_opt[:, 1].sort(kind = 'mergesort')[-1]
+            best_q_value = Q_pes[:, 1].sort(kind = 'mergesort')[-1]
             return Q_pes[:, 0].argsort(kind = 'mergesort')[-1]

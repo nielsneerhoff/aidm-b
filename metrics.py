@@ -27,13 +27,13 @@ class Metrics:
         self.name = name
 
         # Start Timer
-        self.start_time = time.time()
+        self.start_time = np.zeros((NO_RUNS))
 
         # Runtime
-        self.runtime = np.zeros((MAX_EPISODES))
+        self.runtime = np.zeros((NO_RUNS, MAX_EPISODES))
 
         # Cumulative reward received
-        self.cumulative_rewards = np.zeros((MAX_EPISODES))
+        self.cumulative_rewards = np.zeros((NO_RUNS, MAX_EPISODES))
 
         # Transition Function Environment
         self.env_T = self.__get_transition_function()
@@ -43,15 +43,15 @@ class Metrics:
         self.env_std_reward = np.zeros((self.env.nS, self.env.nA))
         self.__init_reward_distributions()
 
-        self.rewards_history = np.frompyfunc(list, 0, 1)(np.empty((self.env.nS, self.env.nA), dtype=object))
-        self.std_reward = np.zeros((self.env.nS, self.env.nA))
+        self.rewards_history = np.frompyfunc(list, 0, 1)(np.empty((NO_RUNS, self.env.nS, self.env.nA), dtype=object))
+        self.std_reward = np.zeros((NO_RUNS, self.env.nS, self.env.nA))
 
 
         # KL Convergence
-        self.KL_divergence_T = np.zeros((self.env.nS, self.env.nA))
-        self.KL_divergence_R = np.zeros((self.env.nS, self.env.nA))
-        self.KL_divergence_T_sum = np.zeros((MAX_EPISODES))
-        self.KL_divergence_R_sum = np.zeros((MAX_EPISODES))
+        self.KL_divergence_T = np.zeros((NO_RUNS, self.env.nS, self.env.nA))
+        self.KL_divergence_R = np.zeros((NO_RUNS, self.env.nS, self.env.nA))
+        self.KL_divergence_T_sum = np.zeros((NO_RUNS, MAX_EPISODES))
+        self.KL_divergence_R_sum = np.zeros((NO_RUNS, MAX_EPISODES))
         self.__init_KL_divergence()
 
         # Q-value of optimal policy
@@ -61,22 +61,22 @@ class Metrics:
         self.env_max_policy = self.__get_env_max_policy()
 
         # Max policy agent
-        self.agent_max_policy = self.agent.max_policy()
+        self.agent_max_policy = np.zeros((NO_RUNS, self.env.nS))
 
         # Coverage error transition probabilities and expected reward
-        self.coverage_error_squared_T = np.zeros((MAX_EPISODES))
-        self.coverage_error_squared_R = np.zeros((MAX_EPISODES))
+        self.coverage_error_squared_T = np.zeros((NO_RUNS, MAX_EPISODES))
+        self.coverage_error_squared_R = np.zeros((NO_RUNS, MAX_EPISODES))
 
         # Sample Complexity Metric
-        self.sample_complexity = 0
+        self.sample_complexity = np.zeros((NO_RUNS))
 
         # Reward and State timeline for instantaneous loss calculation
-        self.reward_timeline = np.zeros((MAX_EPISODES))
-        self.state_timeline = np.zeros((MAX_EPISODES), dtype=int)
-        self.future_rewards = np.zeros((MAX_EPISODES))
+        self.reward_timeline = np.zeros((NO_RUNS, MAX_EPISODES))
+        self.state_timeline = np.zeros((NO_RUNS, MAX_EPISODES), dtype=int)
+        self.future_rewards = np.zeros((NO_RUNS, MAX_EPISODES))
 
         # Instantaneous Loss 
-        self.instantaneous_loss = np.zeros((MAX_EPISODES))
+        self.instantaneous_loss = np.zeros((NO_RUNS, MAX_EPISODES))
 
     def __str__(self):
         '''
@@ -98,63 +98,81 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
     ### ''' Public Updater Methods ''' ###
 
 
-    def get_runtime(self):
+    def start_runtime(self, run):
+        '''
+        Start runtime metric
+
+        '''
+        self.start_time[run] = time.time()
+
+
+    def get_runtime(self, run):
         '''
         Return runtime up until now.
 
         '''
-        return round(time.time() - self.start_time, 5)
+        return round(time.time() - self.start_time[run], 5)
 
     
-    def update_metrics(self, state, action, reward, step):
+    def update_metrics(self, run, state, action, reward, step):
         '''
         Update from experience.
 
         '''
         # updates cumulative reward
-        self.__update_cumulative_reward(step, reward)
+        self.__update_cumulative_reward(run, step, reward)
         
         # updates history of rewards and standard deviation of rewards
-        self.__update_std_reward(state, action, reward)
+        self.__update_std_reward(run, state, action, reward)
         
         # updates reward and transition error squared
-        self.__update_coverage_error_squared(step)
+        self.__update_coverage_error_squared(run, step)
 
         # updates KL divergence metric for transitions and rewards
-        self.__update_KL_divergence(step, state, action)
+        self.__update_KL_divergence(run, step, state, action)
 
         # updates max policy of agent
-        self.__update_max_policy_agent()
+        self.__update_max_policy_agent(run)
 
         # update the time line of the rewards for the instantaneous loss
-        self.__update_reward_timeline(reward, step, state)
+        self.__update_reward_timeline(run, reward, step, state)
 
         # update passed runtime
-        self.__update_runtime(step)
+        self.__update_runtime(run, step)
 
 
-    def calculate_sample_complexity(self, epsilon=1e03):
+    def calculate_sample_complexity(self, run, epsilon=1e03):
         '''
         Update sample complexity
         Computed as the count of differences between best policy and current policy -> 0 is best
         param epsilon : if difference between policies > epsilon then counter plus one
 
         '''
-        self.__calculate_instantaneous_loss()
+
+        # Init future reward
+        self.future_rewards[run, MAX_EPISODES - 1] = self.reward_timeline[run, MAX_EPISODES - 1]
+
+        # Reverse calculate future rewards
+        for i in reversed(range(MAX_EPISODES - 1)):
+            self.future_rewards[run, i] = self.reward_timeline[run, i] + GAMMA * self.future_rewards[run, i + 1]
 
         Q_old = np.zeros((self.env.nS, self.env.nA))
-        counter = 0
         for i in reversed(range(MAX_EPISODES)):
-            Q_new = np.array([[self.env_mean_reward[state][action] + \
-                GAMMA * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
+            
+            # Calculate V_opt "Q_opt" in backwards fashiojn
+            Q_new = np.array([[self.env_mean_reward[state, action] + \
+                GAMMA * np.dot(self.env_T[state, action], np.max(Q_old, axis = 1)) \
                     for action in range(self.env.nA)] \
                         for state in range(self.env.nS)])
-            V_opt = np.max(Q_new[self.state_timeline[i]])
-            V_pol = self.future_rewards[i]
-            if abs(V_opt-V_pol) > epsilon:
-                counter = counter + 1
+
+            # Calculate the instant loss from chosing the action at timestep i
+            self.instantaneous_loss[run, i] = np.max(Q_new[self.state_timeline[run, i]]) - self.future_rewards[run, i]
+
+            # if instantaneous loss is greater than epsilon, add one to sample complexity
+            if self.instantaneous_loss[run, i] > epsilon:
+                self.sample_complexity[run] += 1
+
             Q_old = Q_new
-        self.sample_complexity = counter
 
         
     ### ''' Private Initializer Methods ''' ###
@@ -169,7 +187,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         for state, actions in self.env.P.items():
             for action, probs in actions.items():
                 for (prob, new_state, reward, _) in probs:
-                    T[state][action][new_state] = prob
+                    T[state, action, new_state] = prob
         return T
 
 
@@ -180,9 +198,9 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         for state, actions in self.env.P.items():
             for action, probs in actions.items():
-                self.env_mean_reward[state][action] = sum(reward * prob for (prob, _, reward, _) in probs)
-                self.env_std_reward[state][action] = np.sqrt(sum(
-                    abs(reward - self.env_mean_reward[state][action])**2 * prob 
+                self.env_mean_reward[state, action] = sum(reward * prob for (prob, _, reward, _) in probs)
+                self.env_std_reward[state, action] = np.sqrt(sum(
+                    abs(reward - self.env_mean_reward[state, action])**2 * prob 
                         for (prob, _, reward, _) in probs))
 
         
@@ -191,9 +209,10 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Initialize KL divergence arrays with values.
         
         '''
-        for state in range(self.env.nS):
-            for action in range(self.env.nA):
-                self.__update_KL_divergence(0, state, action)
+        for run in range(NO_RUNS):
+            for state in range(self.env.nS):
+                for action in range(self.env.nA):
+                    self.__update_KL_divergence(run, 0, state, action)
 
 
     def __get_env_max_policy(self):
@@ -212,75 +231,58 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         Q_old = np.ones((self.env.nS, self.env.nA))
         while True:
-            Q_new = np.array([[self.env_mean_reward[state][action] + \
-                GAMMA * np.dot(self.env_T[state][action], np.max(Q_old, axis = 1)) \
+            Q_new = np.array([[self.env_mean_reward[state, action] + \
+                GAMMA * np.dot(self.env_T[state, action], np.max(Q_old, axis = 1)) \
                     for action in range(self.env.nA)] \
                         for state in range(self.env.nS)])
             if np.sum(np.abs(Q_old - Q_new)) < delta:
                 return Q_new
             Q_old = Q_new
-
-
-    def __calculate_instantaneous_loss(self):
-        '''
-        Use the reward time line and the optimal Q values to calculate the instanteneous loss
-
-        '''
-
-        self.future_rewards[MAX_EPISODES - 1] = self.reward_timeline[MAX_EPISODES - 1]
-        self.instantaneous_loss[MAX_EPISODES - 1] = np.max(self.env_Q[self.state_timeline[MAX_EPISODES - 1]]) - self.future_rewards[MAX_EPISODES-1]   
-
-
-        for i in reversed(range(MAX_EPISODES - 1)):
-            self.future_rewards[i] = self.reward_timeline[i] + GAMMA * self.future_rewards[i + 1]
-            self.instantaneous_loss[i] = np.max(self.env_Q[self.state_timeline[i]]) - self.future_rewards[i]            
-
-        return self.instantaneous_loss
         
 
     ### ''' Private Updater Methods ''' ###
 
 
-    def __update_runtime(self, step):
+    def __update_runtime(self, run, step):
         '''
         Update runtime for current step.
 
         '''
-        self.runtime[step] = self.get_runtime()
+        self.runtime[run, step] = self.get_runtime(run)
 
-    def __update_cumulative_reward(self, step, reward):
+    def __update_cumulative_reward(self, run, step, reward):
         '''
         Update cumulative reward.
 
         '''
         if step == 0:
-            self.cumulative_rewards[step] = reward
+            self.cumulative_rewards[run, step] = reward
         else:
-            self.cumulative_rewards[step] = reward + self.cumulative_rewards[step-1]
+            self.cumulative_rewards[run, step] = reward + self.cumulative_rewards[run, step-1]
 
 
-    def __update_std_reward(self, state, action, reward):
+    def __update_std_reward(self, run, state, action, reward):
         '''
         Update standard deviation of reward.
         '''
-        self.rewards_history[state][action].append(reward)
-        if len(self.rewards_history[state][action]) > 1:
-            self.std_reward[state][action] = np.std(self.rewards_history[state][action], ddof=1)
+        self.rewards_history[run, state, action].append(reward)
+        if len(self.rewards_history[run, state, action]) > 1:
+            self.std_reward[run, state, action] = np.std(self.rewards_history[run, state, action], ddof=1)
         else:
-            self.std_reward[state][action] = 0.
+            self.std_reward[run, state, action] = 0.
 
     
-    def __update_coverage_error_squared(self, step):
+    def __update_coverage_error_squared(self, run, step):
         '''
         Update discrete coverage error.
         Returns the squared error of 
 
         '''
-        self.coverage_error_squared_T[step] = np.sum(np.square(self.agent.T - self.env_T))
-        self.coverage_error_squared_R[step] = np.sum(np.square(self.agent.R - self.env_mean_reward))
+        self.coverage_error_squared_T[run, step] = np.sum(np.square(self.agent.T - self.env_T))
+        self.coverage_error_squared_R[run, step] = np.sum(np.square(self.agent.R - self.env_mean_reward))
 
 
-    def __update_KL_divergence(self, step, state, action):
+    def __update_KL_divergence(self, run, step, state, action):
         '''
         Updates KL divergence metric for transitions
 
@@ -290,40 +292,40 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         with np.errstate(divide='ignore'):
             # KL divergence transition: sum(Yt * log(Xt/Yt)) where Yt != 0
-            agent_transitions = self.agent.T[state][action][self.env_T[state][action] != 0]
-            env_transitions = self.env_T[state][action][self.env_T[state][action] != 0]
+            agent_transitions = self.agent.T[state, action][self.env_T[state, action] != 0]
+            env_transitions = self.env_T[state, action][self.env_T[state, action] != 0]
 
-            self.KL_divergence_T[state][action] = np.sum(env_transitions * np.log(agent_transitions / env_transitions))
+            self.KL_divergence_T[run, state, action] = np.sum(env_transitions * np.log(agent_transitions / env_transitions))
 
             # KL divergence reward: log(std(Xt) / std(Yt)) + (std(Rt)^2 + (mean(Rt) - mean(Yt))^2) / (2 * std(Yt)^2)) - 0.5 where std(Yt) != 0
-            if self.env_std_reward[state][action] > 0: # and self.std_reward[state][action] > 0
-                self.KL_divergence_R[state][action] = np.log(self.env_std_reward[state][action] / self.std_reward[state][action]) + \
-                    (np.square(self.std_reward[state][action]) + np.square(self.agent.R[state][action] - self.env_mean_reward[state][action])) / \
-                        (2 * np.square(self.env_std_reward[state][action])) - 0.5
-        if np.isinf(np.sum(self.KL_divergence_R)):
-            self.KL_divergence_R_sum[step] = 2**30
+            if self.env_std_reward[state, action] > 0: # and self.std_reward[state][action] > 0
+                self.KL_divergence_R[run, state, action] = np.log(self.env_std_reward[state, action] / self.std_reward[run, state, action]) + \
+                    (np.square(self.std_reward[run, state, action]) + np.square(self.agent.R[state, action] - self.env_mean_reward[state, action])) / \
+                        (2 * np.square(self.env_std_reward[state, action])) - 0.5
+        if np.isinf(np.sum(self.KL_divergence_R[run])):
+            self.KL_divergence_R_sum[run, step] = 2**30
         else:
-            self.KL_divergence_R_sum[step] = np.sum(self.KL_divergence_R)
+            self.KL_divergence_R_sum[run, step] = np.sum(self.KL_divergence_R[run])
 
-        if np.isinf(np.sum(self.KL_divergence_T)):
-            self.KL_divergence_T_sum[step] = 2**30
+        if np.isinf(np.sum(self.KL_divergence_T[run])):
+            self.KL_divergence_T_sum[run, step] = 2**30
         else:
-            self.KL_divergence_T_sum[step] = np.sum(self.KL_divergence_T)
+            self.KL_divergence_T_sum[run, step] = np.sum(self.KL_divergence_T[run])
 
-    def __update_max_policy_agent(self):
+    def __update_max_policy_agent(self, run):
         '''
         Update max policy of agent
 
         '''
-        self.agent_max_policy = self.agent.max_policy()
+        self.agent_max_policy[run] = self.agent.max_policy()
 
-    def __update_reward_timeline(self, reward, step, state):
+    def __update_reward_timeline(self, run, reward, step, state):
         '''
         Update reward timeline for instanteneous loss, all rewards recieved in one array
 
         '''
-        self.reward_timeline[step] = reward
-        self.state_timeline[step] = state
+        self.reward_timeline[run, step] = reward
+        self.state_timeline[run, step] = state
 
 
 def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
@@ -336,7 +338,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
     '''
     # Variable name : Headers           Var name must be exact match excl. 'self.'
     # First header is the index, others will be prefixed with agent name
-    metrics = {
+    mean_metrics = {
         'runtime' : ['episode', 'runtime'],
         'cumulative_rewards' : ['episode', 'reward'],
         'reward_timeline' : ['episode', 'reward'],
@@ -347,7 +349,15 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
         'instantaneous_loss' : ['episode', 'inst_loss']
     }
 
-    for metric in metrics.keys():
+    single_metrics = {
+        'sample_complexity' : ['run', 'steps']
+    }
+
+    for metric in mean_metrics.keys():
+        if not hasattr(list_of_metric_objects[0], metric):
+            raise AttributeError(f"Metric '{metric}' is not an attribute")
+
+    for metric in single_metrics.keys():
         if not hasattr(list_of_metric_objects[0], metric):
             raise AttributeError(f"Metric '{metric}' is not an attribute")
 
@@ -356,24 +366,45 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
     if not os.path.exists(directory):
         os.mkdir(directory)
 
-    for metric, headers in metrics.items():
+    for metric, headers in mean_metrics.items():
 
         os.chdir(BASE_PATH)
         os.chdir(directory)
-
-        header = headers[0] + '\t' + '\t'.join(f'{obj.name}_{headers[1]}' for obj in list_of_metric_objects)
 
         filename = f'{metric}.dat' if prefix == '' else f'{prefix}_{metric}.dat'
 
         if os.path.exists(filename):
             os.remove(filename)
 
+        header = headers[0] + '\t' + '\t'.join(f'{obj.name}_{headers[1]}_mean\t{obj.name}_{headers[1]}_std' for obj in list_of_metric_objects)
+
+        with open(filename, "w") as f:
+            f.write(header + '\n')
+            for i in range(len(getattr(list_of_metric_objects[0], metric)[0])):
+                data = '\t\t'.join(f'{round(np.mean(getattr(obj, metric), axis=0)[i], 5)}\t\t{round(np.std(getattr(obj, metric), axis=0)[i], 5)}' \
+                    for obj in list_of_metric_objects)
+                f.write(f'{i+1}\t\t{data}\n')
+        f.close()
+
+    for metric, headers in single_metrics.items():
+
+        os.chdir(BASE_PATH)
+        os.chdir(directory)
+
+        filename = f'{metric}.dat' if prefix == '' else f'{prefix}_{metric}.dat'
+
+        if os.path.exists(filename):
+            os.remove(filename)
+
+        header = headers[0] + '\t' + '\t'.join(f'{obj.name}_{headers[1]}' for obj in list_of_metric_objects)
+
         with open(filename, "w") as f:
             f.write(header + '\n')
             for i in range(len(getattr(list_of_metric_objects[0], metric))):
-                data = '\t\t'.join(f'{round(getattr(obj, metric)[i], 5)}' for obj in list_of_metric_objects)
+                data = '\t\t'.join(f'{round(getattr(obj, metric)[i], 5)}' \
+                    for obj in list_of_metric_objects)
                 f.write(f'{i+1}\t\t{data}\n')
         f.close()
+
     
     print('done writing')
-
