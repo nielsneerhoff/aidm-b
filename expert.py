@@ -59,20 +59,20 @@ class BoundedParameterExpert:
         Performs one iteration of pessimistic value updates. Returns new value intervals for each state, and whether the update difference was smaller than delta.
 
         """
-        # Changed ub to lb and vice versa. ######
+
         # Find the current values (maximum action at states).
         Q_pes_new = np.array(self.Q_pes)
         Q_pes_state_values = np.max(Q_pes_new, axis = 1)
 
-        # Sort on state lb's in decreasing order.
+        # Sort on state lb's in increasing order.
         Q_pes_lbs = Q_pes_state_values[:, 0]
-        permutation = np.argsort(Q_pes_lbs)[::-1][:self.env.nS]
-        Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_lbs) #
+        permutation = np.argsort(Q_pes_lbs)
+        Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_lbs)
 
-        # Sort on state ub's in increasing order.
+         # Sort on state ub's in decreasing order.
         Q_pes_ubs = Q_pes_state_values[:, 1]
-        permutation = np.argsort(Q_pes_ubs)
-        Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_ubs) #
+        permutation = np.argsort(Q_pes_ubs)[::-1][:self.env.nS]
+        Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_ubs)
 
         return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
 

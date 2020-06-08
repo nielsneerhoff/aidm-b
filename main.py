@@ -9,7 +9,7 @@ from mediator import Mediator
 from utils import *
 from metrics import Metrics, write_metrics_to_file
 
-env = gym.make("gym_factored:river-swim-v0")
+env = gym.make("gym_factored:optpes-v0")
 
 def learn_online(env, agent, mediator, metrics):
     for run in range(NO_RUNS):
