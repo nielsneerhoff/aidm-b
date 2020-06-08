@@ -42,7 +42,7 @@ def learn_online(env, agent, mediator, metrics):
 
 # Initialize agents.
 m = 1000 # Model size could be infinite.
-beta = 4000
+beta = (1 / (1 - GAMMA)) * np.sqrt(np.log(2 * env.nS * env.nA * m / DELTA) / 2)
 mbie_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 
