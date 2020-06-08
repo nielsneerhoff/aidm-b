@@ -220,7 +220,7 @@ class MBIE_EB(ModelBasedLearner):
         if np.sum(self.n[state][action]) > 0:
             return self.R[state][action] + GAMMA * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
         else:
-            return self.R_range[1] / (1 - GAMMA) # See paper below eq. 6.
+            return self.beta
 
     def exploration_bonus(self, state, action):
         return self.beta / np.sqrt(np.sum(self.n[state][action]))

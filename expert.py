@@ -113,4 +113,4 @@ class Expert:
 
         """
 
-        return self.Q_pes[state, :, 0].argsort()[-1]
+        return self.Q_pes[state, :, 0].sort()[-1]
