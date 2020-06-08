@@ -27,17 +27,10 @@ def learn_online(env, agent, mediator, metrics):
             metrics.update_metrics(run, state, action, reward, i)
             state = new_state
             agent.value_iteration(MAX_ITERATIONS, DELTA)
-            if i % 100 == 0:
-                print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
-                # new_agent_model = agent._learned_model()
-                # print('NEW\n', new_agent_model.T_high)
-                # old_agent_model = agent.learned_model()
-                # print('OLD\n', old_agent_model.T_high)
-                # if agent_model.T_high[0, 1, 3] - agent_model.T_low[0, 1, 3] < 0.3:
-                #     action = mediator.select_action(state, agent_model)
-                    # mediator_action = mediator.select_action(state, agent_model)
-                    # print(metrics_eb)
-        metrics.calculate_sample_complexity(run)
+            print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
+            action = mediator.select_action(state, agent_model)
+            mediator_action = mediator.select_action(state, agent_model)
+        metrics.calculate_sample_complexity()
     return agent.Q#, cum_reward
 
 # Initialize agents.
