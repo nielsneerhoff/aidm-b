@@ -7,11 +7,11 @@ from expert import BoundedParameterExpert
 from pseudo_env import OffsetModel, HighLowModel, expected_rewards
 from mediator import Mediator
 from utils import *
-from metrics import Metrics
+from metrics import Metrics, write_metrics_to_file
 
 env = gym.make("gym_factored:river-swim-v0")
 
-def learn_online(env, agent, mediator):
+def learn_online(env, agent, mediator, metrics):
     state = env.reset()
     cum_reward = 0
     agent_model = None
@@ -21,16 +21,20 @@ def learn_online(env, agent, mediator):
         # print(state, action, new_state)
         cum_reward += reward
         agent.process_experience(state, action, new_state, reward, done)
-        # metrics_eb.update_metrics(state, action, reward, i)
+        metrics.update_metrics(state, action, reward, i)
         state = new_state
         if i % 100 == 0:
             agent.value_iteration(MAX_ITERATIONS, DELTA)
             print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
-            # agent_model = agent.learned_model()
+            # new_agent_model = agent._learned_model()
+            # print('NEW\n', new_agent_model.T_high)
+            # old_agent_model = agent.learned_model()
+            # print('OLD\n', old_agent_model.T_high)
             # if agent_model.T_high[0, 1, 3] - agent_model.T_low[0, 1, 3] < 0.3:
             #     action = mediator.select_action(state, agent_model)
                 # mediator_action = mediator.select_action(state, agent_model)
                 # print(metrics_eb)
+    metrics.calculate_sample_complexity()
     return agent.Q, cum_reward
 
 # Initialize agents.
@@ -53,7 +57,16 @@ expert = BoundedParameterExpert(expert_model)
 mediator = Mediator(expert)
 
 # Initialize metrics.
-# metrics_eb = Metrics(mbie_eb_agent, env)
-
 # expert.value_iteration()
-print(learn_online(env, mbie_agent, mediator))
+
+mbie_metrics = Metrics(mbie_agent, env, 'mbie')
+
+print(learn_online(env, mbie_agent, mediator, mbie_metrics))
+
+
+mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
+
+print(learn_online(env, mbie_eb_agent, mediator, mbie_eb_metrics))
+
+
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'output')
