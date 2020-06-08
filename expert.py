@@ -8,13 +8,16 @@ class BoundedParameterExpert:
 
     """
 
-    def __init__(self, env):
+    def __init__(self, env, strictness):
 
         self.env = env
 
         # Stores current state value intervals for both modes.
         self.Q_pes = np.ones((env.nS, env.nA, 2)) # Pessimistic.
         self.Q_opt = np.ones((env.nS, env.nA, 2)) # Optimistic.
+
+        # Parameter guaruantees that agent follows 1 - strictness opt. policy.
+        self.strictness = strictness
 
     def value_iteration(self):
         """
@@ -56,7 +59,7 @@ class BoundedParameterExpert:
         Performs one iteration of pessimistic value updates. Returns new value intervals for each state, and whether the update difference was smaller than delta.
 
         """
-
+        # Changed ub to lb and vice versa. ######
         # Find the current values (maximum action at states).
         Q_pes_new = np.array(self.Q_pes)
         Q_pes_state_values = np.max(Q_pes_new, axis = 1)
@@ -64,12 +67,12 @@ class BoundedParameterExpert:
         # Sort on state lb's in decreasing order.
         Q_pes_lbs = Q_pes_state_values[:, 0]
         permutation = np.argsort(Q_pes_lbs)[::-1][:self.env.nS]
-        Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_lbs)
+        Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_lbs) #
 
         # Sort on state ub's in increasing order.
         Q_pes_ubs = Q_pes_state_values[:, 1]
         permutation = np.argsort(Q_pes_ubs)
-        Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_ubs)
+        Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_ubs) #
 
         return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
 
@@ -101,17 +104,6 @@ class BoundedParameterExpert:
             Qnew[p] = self.env.R[p] + GAMMA * np.dot(F[p], q_values.T)
         return Qnew
 
-    def max_policy(self, mode):
-        if mode == 'optimistic':
-            # Return max policy based on optimistic ordering.
-            optimistic_policy = None
-        elif mode == 'pessimistic':
-            # Return max policy based on optimistic ordering.
-            pessimistic_policy = None
-
-        # To do: return some nice statistics, e.g. where do the policies overlap.
-        return
-
     def select_action(self, state, mode):
         """
         Returns a Pareto efficient action based on mode.
@@ -120,12 +112,15 @@ class BoundedParameterExpert:
 
         if mode is 'optimistic':
 
-            # To do: Sort on upper bound, then on lower bound.
+            # TO DO: Sort on upper bound, then on lower bound.
             Q_opt = self.Q_opt[state].copy()
+            best_q_value = Q_opt[:, 1].sort(kind = 'mergesort')[-1]
+            candidate_actions = Q_opt[:, 1].argsort(kind = 'mergesort')[-1]
             return Q_opt[:, 1].argsort(kind = 'mergesort')[-1]
 
         elif mode is 'pessimistic':
 
-            # To do: Sort on lower bound, then on upper bound.
+            # TO DO: Sort on lower bound, then on upper bound.
             Q_pes = self.Q_pes[state].copy()
+            best_q_value = Q_opt[:, 1].sort(kind = 'mergesort')[-1]
             return Q_pes[:, 0].argsort(kind = 'mergesort')[-1]

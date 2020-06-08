@@ -16,7 +16,7 @@ def learn_online(env, agent, mediator, metrics):
     cum_reward = 0
     agent_model = None
     for i in range(MAX_EPISODES):
-        action = agent.select_action(state)
+        action = mediator.select_action(state, agent_model)
         new_state, reward, done, info = env.step(action)
         # print(state, action, new_state)
         cum_reward += reward
@@ -39,15 +39,16 @@ mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 
 # Intialize expert & mediator.
 T = env.get_transition_function(env.nA, env.nS)
-T_low = T.copy()
-T_low[0, 1, 3] = 0.4
-T_high = T.copy()
+# T_low = T.copy()
+# T_low[0, 1, 3] = 0.4
+# T_high = T.copy()
 
 R = expected_rewards(env)
-expert_model = HighLowModel(T_low, T_high, R)
+# expert_model = HighLowModel(T_low, T_high, R)
+expert_model = OffsetModel(T, 0.3, R)
 
 # expert_model = OffsetModel.from_env(env, 0.2)
-expert = BoundedParameterExpert(expert_model)
+expert = BoundedParameterExpert(expert_model, 0.3)
 mediator = Mediator(expert)
 
 # Initialize metrics.
