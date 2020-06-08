@@ -30,7 +30,7 @@ def learn_online(env, agent, mediator, metrics):
             print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
             action = mediator.select_action(state, agent_model)
             mediator_action = mediator.select_action(state, agent_model)
-        metrics.calculate_sample_complexity()
+        metrics.calculate_sample_complexity(run)
     return agent.Q#, cum_reward
 
 # Initialize agents.
