@@ -41,14 +41,14 @@ class Expert:
         # Find the current values (maximum action at states).
         Q_opt_new = np.array(self.Q_opt)
         Q_opt_state_values = np.max(Q_opt_new, axis = 1)
+        Q_opt_ubs = Q_opt_state_values[:, 1]
 
         # Sort on state lb's in increasing order.
         Q_opt_lbs = Q_opt_state_values[:, 0]
         permutation = np.argsort(Q_opt_lbs)
-        Q_opt_new[:, :, 0] = self.value_iterate(permutation, Q_opt_lbs)
+        Q_opt_new[:, :, 0] = self.value_iterate(permutation, Q_opt_ubs)
 
         # Sort on state ub's in decreasing order.
-        Q_opt_ubs = Q_opt_state_values[:, 1]
         permutation = np.argsort(Q_opt_ubs)[::-1][:self.env.nS]
         Q_opt_new[:, :, 1] = self.value_iterate(permutation, Q_opt_ubs)
 
@@ -63,19 +63,16 @@ class Expert:
         # Find the current values (maximum action at states).
         Q_pes_new = np.array(self.Q_pes)
         Q_pes_state_values = np.max(Q_pes_new, axis = 1)
-
-         # Sort on state ub's in increasing order.
-        Q_pes_ubs = Q_pes_state_values[:, 1] ### ADDED
-
-        # Sort on state lb's in decreasing order.
         Q_pes_lbs = Q_pes_state_values[:, 0]
-        permutation = np.argsort(Q_pes_lbs)[::-1][:self.env.nS]
-        Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_ubs)
 
-         # Sort on state ub's in increasing order.
-        Q_pes_ubs = Q_pes_state_values[:, 1]
-        permutation = np.argsort(Q_pes_ubs)
+        # Sort on state lb's in increasing order.
+        permutation = np.argsort(Q_pes_lbs)
         Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_lbs)
+
+        # Sort on state ub's in decreasing order.
+        Q_pes_ubs = Q_pes_state_values[:, 1]
+        permutation = np.argsort(Q_pes_ubs)[::-1][:self.env.nS]
+        Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_lbs)
 
         return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
 

@@ -9,7 +9,7 @@ from mediator import Mediator
 from utils import *
 from metrics import Metrics, write_metrics_to_file
 
-env = gym.make("gym_factored:optpes-v0")
+env = gym.make("gym_factored:river-swim-v0")
 
 def learn_online(env, agent, mediator, metrics):
     for run in range(NO_RUNS):
@@ -41,12 +41,12 @@ mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 
 # Intialize expert & mediator.
 T = env.get_transition_function(env.nA, env.nS)
-T_low = T.copy()
-T_low[0, 1, 3] = 0.4
-T_high = T.copy()
+# T_low = T.copy()
+# T_low[0, 1, 3] = 0.4
+# T_high = T.copy()
 
 R = expected_rewards(env)
-expert_model = HighLowModel(T_low, T_high, R)
+expert_model = OffsetModel(T, 0.2, R)
 # expert_model = OffsetModel(T, 0.3, R)
 
 # expert_model = OffsetModel.from_env(env, 0.2)

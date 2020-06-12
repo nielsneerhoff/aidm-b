@@ -1,6 +1,6 @@
 import numpy as np
 
-from expert import BoundedParameterExpert
+from expert import Expert
 from pseudo_env import PseudoEnv
 
 class Mediator:
@@ -32,7 +32,7 @@ class Mediator:
 
             # Combine the two models: we pick tightest T(s, a, s').
             merged_model = PseudoEnv.merge(agent_model, self.expert.env)
-            merged_expert = BoundedParameterExpert(merged_model)
+            merged_expert = Expert(merged_model)
             merged_expert.value_iteration()
 
             Q_pes = merged_expert.Q_pes[state, :, 0]
