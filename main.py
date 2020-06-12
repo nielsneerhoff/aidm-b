@@ -11,7 +11,7 @@ from metrics import Metrics, write_metrics_to_file
 
 env = gym.make("gym_factored:river-swim-v0")
 
-def learn_online(env, agent, mediator, metrics):
+def learn_online(env, agent, metrics, mediator = None):
     for run in range(NO_RUNS):
         agent.reset()
         state = env.reset()
@@ -57,11 +57,11 @@ mediator = Mediator(expert, rho = 0.3)
 
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
 
-print(learn_online(env, mbie_agent, mediator, mbie_metrics))
+print(learn_online(env, mbie_agent, mbie_metrics))
 
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 
-print(learn_online(env, mbie_eb_agent, mediator, mbie_eb_metrics))
+print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
 
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'output')
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'rivers-swim-output')

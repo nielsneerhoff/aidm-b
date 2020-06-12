@@ -36,8 +36,13 @@ class Mediator:
 
             # Combine two models: pick tightest T(s, a, s') for each s, a, s'.
             merged_model = PseudoEnv.merge(agent_model, self.expert.env)
+<<<<<<< HEAD
             expert = Expert(merged_model)
             expert.value_iteration()
+=======
+            merged_expert = Expert(merged_model)
+            merged_expert.value_iteration()
+>>>>>>> 21b1484dfcfdbfaa2a68749567d53d92e79af167
 
             action, value = expert.best_action_value(state)
 
