@@ -8,16 +8,12 @@ class Expert:
 
     """
 
-    def __init__(self, env, strictness):
+    def __init__(self, env):
 
         self.env = env
 
-        # Stores current state value intervals for both modes.
-        self.Q_pes = np.ones((env.nS, env.nA, 2)) # Pessimistic.
-        self.Q_opt = np.ones((env.nS, env.nA, 2)) # Optimistic.
-
-        # Parameter guaruantees that agent follows 1 - strictness opt. policy.
-        self.strictness = strictness
+        # Stores current state value intervals.
+        self.Q_pes = np.ones((env.nS, env.nA))
 
     def value_iteration(self):
         """
@@ -26,33 +22,10 @@ class Expert:
         """
 
         for i in range(MAX_ITERATIONS):
-            self.Q_opt, done_opt = self.optimistic_value_iterate()
-            self.Q_pes, done_pes = self.pessimistic_value_iterate()
-            if i > 1000 and done_opt and done_pes:
+            self.Q_pes, done = self.pessimistic_value_iterate()
+            if i > 1000 and done:
                 break
-        return self.Q_pes, self.Q_opt
-
-    def optimistic_value_iterate(self):
-        """
-        Performs one iteration of optimistic value updates. Returns new value intervals for each state, and whether the update difference was smaller than delta.
-
-        """
-
-        # Find the current values (maximum action at states).
-        Q_opt_new = np.array(self.Q_opt)
-        Q_opt_state_values = np.max(Q_opt_new, axis = 1)
-        Q_opt_ubs = Q_opt_state_values[:, 1]
-
-        # Sort on state lb's in increasing order.
-        Q_opt_lbs = Q_opt_state_values[:, 0]
-        permutation = np.argsort(Q_opt_lbs)
-        Q_opt_new[:, :, 0] = self.value_iterate(permutation, Q_opt_ubs)
-
-        # Sort on state ub's in decreasing order.
-        permutation = np.argsort(Q_opt_ubs)[::-1][:self.env.nS]
-        Q_opt_new[:, :, 1] = self.value_iterate(permutation, Q_opt_ubs)
-
-        return Q_opt_new, np.abs(np.sum(Q_opt_new) - np.sum(self.Q_opt)) < DELTA
+        return self.Q_pes
 
     def pessimistic_value_iterate(self):
         """
@@ -63,16 +36,11 @@ class Expert:
         # Find the current values (maximum action at states).
         Q_pes_new = np.array(self.Q_pes)
         Q_pes_state_values = np.max(Q_pes_new, axis = 1)
-        Q_pes_lbs = Q_pes_state_values[:, 0]
 
         # Sort on state lb's in increasing order.
-        permutation = np.argsort(Q_pes_lbs)
-        Q_pes_new[:, :, 0] = self.value_iterate(permutation, Q_pes_lbs)
-
-        # Sort on state ub's in decreasing order.
-        Q_pes_ubs = Q_pes_state_values[:, 1]
-        permutation = np.argsort(Q_pes_ubs)[::-1][:self.env.nS]
-        Q_pes_new[:, :, 1] = self.value_iterate(permutation, Q_pes_lbs)
+        permutation = np.argsort(Q_pes_state_values)
+        Q_pes_new = self.value_iterate(
+            permutation, Q_pes_state_values)
 
         return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
 
@@ -104,10 +72,23 @@ class Expert:
             Qnew[p] = self.env.R[p] + GAMMA * np.dot(F[p], q_values.T)
         return Qnew
 
-    def safe_q_value(self, state):
+    def best_action_value(self, state):
         """
-        Returns the 'safe' q-value: the optimal pessimistic q-value lower bound.
+        Returns the best action and its value for current state.
 
         """
 
-        return self.Q_pes[state, :, 0].sort()[-1]
+        best_action = np.argmax(self.Q_pes[state])
+        best_value = self.Q_pes[state, best_action]
+        return best_action, best_value
+
+    def random_action(self, state, q_value, rho):
+        """
+        Returns a random action with higher value than (1 - rho) * q_value, if it exists.
+
+        """
+
+        actions = np.arange(0, self.env.nA, 1)
+        within_strictness = actions[
+            self.Q_pes[state] >= (1 - rho) * q_value]
+        return np.random.choice(within_strictness)

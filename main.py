@@ -16,23 +16,21 @@ def learn_online(env, agent, mediator, metrics):
         agent.reset()
         state = env.reset()
         # cum_reward = 0
-        agent_model = None
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
-            action = agent.select_action(state)
+            agent_model = agent.learned_model()
+            action = mediator.select_action(state, agent_model)
             new_state, reward, done, info = env.step(action)
-            # print(state, action, new_state)
+            print(state, action, new_state)
             # cum_reward += reward
             agent.process_experience(state, action, new_state, reward, done)
             metrics.update_metrics(run, state, action, reward, i)
             state = new_state
             agent.value_iteration(MAX_ITERATIONS, DELTA)
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 print('Iteration', i, 'run', run, '\t', agent.max_policy(), '\n', agent.Q)
-            # action = mediator.select_action(state, agent_model)
-            # mediator_action = mediator.select_action(state, agent_model)
         metrics.calculate_sample_complexity(run)
-    return agent.Q#, cum_reward
+    return agent.Q #, cum_reward
 
 # Initialize agents.
 m = MAX_EPISODES # Model size could be infinite.
@@ -47,12 +45,12 @@ T = env.get_transition_function(env.nA, env.nS)
 # T_high = T.copy()
 
 R = expected_rewards(env)
-expert_model = OffsetModel(T, 0.2, R)
+expert_model = OffsetModel(T, 0.3, R)
 # expert_model = OffsetModel(T, 0.3, R)
 
 # expert_model = OffsetModel.from_env(env, 0.2)
-expert = Expert(expert_model, 0.3)
-mediator = Mediator(expert)
+expert = Expert(expert_model)
+mediator = Mediator(expert, rho = 0.3)
 
 # Initialize metrics.
 # expert.value_iteration()
@@ -60,7 +58,6 @@ mediator = Mediator(expert)
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
 
 print(learn_online(env, mbie_agent, mediator, mbie_metrics))
-
 
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 

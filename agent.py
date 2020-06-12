@@ -26,6 +26,9 @@ class ModelBasedLearner:
         self.T = np.ones((nS, nA, nS)) / (nS)
         self.R = np.zeros((nS, nA))
 
+        # Stores ubs and lbs on learned transition probabilities.
+        self.T_low = np.zeros((nS, nA))
+        self.T_high = np.ones((nS, nA))
 
     def reset(self):
         '''
@@ -58,6 +61,14 @@ class ModelBasedLearner:
             # Adjust mean probability and reward estimate accordingly.
             self.T[state][action] = (self.n[state][action]) / ( np.sum(self.n[state][action]))
             self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
+            
+            epsilon_t = self.epsilon_t(state, action)
+            self.T_low[state][action] = np.maximum(
+                self.T[state][action] - epsilon_t, 0
+            )
+            self.T_high[state][action] = np.minimum(
+                self.T[state][action] + epsilon_t, 1
+            )
 
     def select_action(self, state):
         """
@@ -99,25 +110,8 @@ class ModelBasedLearner:
 
         """
 
-        # If no experience, there is no model.
-        if np.sum(self.n) == 0:
-            return None
-
-        # Else, model is determined by mean plus and minus epsilon.
-        T_high = np.ones((self.nS, self.nA, self.nS))
-        T_low = np.zeros((self.nS, self.nA, self.nS))
-
-        # Form estimate lower/upper bound for each state, action.
-        for state in range(self.nS):
-            for action in range(self.nA):
-                epsilon_t = self.epsilon_t(state, action)
-                T_high[state, action] = np.minimum(
-                    self.T[state, action] + epsilon_t, T_high[state][action])
-                T_low[state, action] = np.maximum(
-                    self.T[state, action] - epsilon_t, T_low[state][action])
-
         # For now assume rewards have no interval.
-        return HighLowModel(T_low, T_high, self.R)
+        return HighLowModel(self.T_low, self.T_high, self.R)
 
     def epsilon_r(self, state, action):
         """

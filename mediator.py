@@ -9,7 +9,7 @@ class Mediator:
 
     """
 
-    def __init__(self, expert, iterate = True):
+    def __init__(self, expert, rho, iterate = True):
         """
         Sets the properties of this mediator.
 
@@ -19,6 +19,9 @@ class Mediator:
         if iterate:
             self.expert.value_iteration()
 
+        # Parameter guaruantees that agent follows 1 - rho optimal pessimistic policy.
+        self.rho = rho
+
     def select_action(self, state, agent_model):
         """
         Returns an action to select based on the current agent and/or expert model (if the agent model is provided).
@@ -26,29 +29,21 @@ class Mediator:
         """
 
         # Find safe q-value.
-        safe_q_value = self.expert.safe_q_value(state)
+        _, safe_q_value = self.expert.best_action_value(state)
+        expert = self.expert
 
         if agent_model is not None:
 
-            # Combine the two models: we pick tightest T(s, a, s').
+            # Combine two models: pick tightest T(s, a, s') for each s, a, s'.
             merged_model = PseudoEnv.merge(agent_model, self.expert.env)
-            merged_expert = Expert(merged_model)
-            merged_expert.value_iteration()
+            expert = Expert(merged_model)
+            expert.value_iteration()
 
-            Q_pes = merged_expert.Q_pes[state, :, 0]
+            action, value = expert.best_action_value(state)
 
             # If merged model (i.e., agent) found higher q-value, greedy.
-            if np.any(Q_pes > safe_q_value):
-                # TO DO: Sort on higher bound (if there is a tie!).
-                action = Q_pes.argmax()
+            if np.any(value > safe_q_value):
                 return action
-        else:
-            Q_pes = self.expert.Q_pes[state, :, 0]
 
-        # Else, pick action within 1 - strictness of pessimistic opt.
-        actions = np.arange(0, expert.env.nA, 1)
-        within_strictness = actions[
-            Q_pes >= (1 - expert.strictness) * safe_q_value]
-        action = np.random.choice(within_strictness)
-
-        return action
+        # Else, pick action within 1 - rho of pessimistic opt.
+        return expert.random_action(state, safe_q_value, self.rho)

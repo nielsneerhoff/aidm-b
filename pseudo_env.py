@@ -26,30 +26,30 @@ class PseudoEnv(DiscreteEnv):
         return self.T_low[state, action]
 
     @staticmethod
-    def merge(pseudo_env_one, pseudo_env_two):
+    def merge(agent_model, expert_model):
         """
         Returns a merged pseudo-env using tighest bounds for transition probabilities.
 
+        We assume the expert model has the reward correct.
+
         """
 
-        assert (pseudo_env_one.nS, pseudo_env_one.nA) == (pseudo_env_two.nS, pseudo_env_two.nA)
-
         # Else, model is determined by mean plus and minus epsilon.
-        T_high = np.array((pseudo_env_one.T_high))
-        T_low = np.array((pseudo_env_one.T_low))
-        size_one = pseudo_env_one.T_high - pseudo_env_one.T_low
-        size_two = pseudo_env_two.T_high - pseudo_env_two.T_low
+        T_high = np.array((agent_model.T_high))
+        T_low = np.array((agent_model.T_low))
+        agent_size = agent_model.T_high - agent_model.T_low
+        expert_size = expert_model.T_high - expert_model.T_low
 
         # Form estimate lower/upper bound for each state, action.
-        for state in range(pseudo_env_one.nS):
-            for action in range(pseudo_env_one.nA):
-                for next_state in range(pseudo_env_one.nS):
-                    if size_one[state, action, next_state] > size_two[state, action, next_state]:
-                        T_high[state, action, next_state] = pseudo_env_two.T_high[state, action, next_state]
-                        T_low[state, action, next_state] = pseudo_env_two.T_low[state, action, next_state]
+        for s in range(agent_model.nS):
+            for a in range(agent_model.nA):
+                for s_ in range(agent_model.nS):
+                    if agent_size[s, a, s_] > expert_size[s, a, s_]:
+                        T_high[s, a, s_] = expert_model.T_high[s, a, s_]
+                        T_low[s, a, s_] = expert_model.T_low[s, a, s_]
 
         # Ignore reward for now.
-        return PseudoEnv(pseudo_env_one.nS, pseudo_env_one.nA, T_low, T_high, pseudo_env_one.R)
+        return HighLowModel(T_low, T_high, expert_model.R)
 
 class HighLowModel(PseudoEnv):
     """
