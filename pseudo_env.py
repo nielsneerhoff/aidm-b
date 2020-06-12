@@ -17,39 +17,27 @@ class PseudoEnv(DiscreteEnv):
         self.T_low, self.T_high = T_low, T_high
         self.R = R
 
-    def compare(self, state, action, other_pseudo_env):
+    def interval_sizes(self, state, action):
         """
-        
-
-        """
-
-        return self.T_low[state, action]
-
-    @staticmethod
-    def merge(agent_model, expert_model):
-        """
-        Returns a merged pseudo-env using tighest bounds for transition probabilities.
-
-        We assume the expert model has the reward correct.
+        Returns the sizes of the interval of each next state probability.
 
         """
 
-        # Else, model is determined by mean plus and minus epsilon.
-        T_high = np.array((agent_model.T_high))
-        T_low = np.array((agent_model.T_low))
-        agent_size = agent_model.T_high - agent_model.T_low
-        expert_size = expert_model.T_high - expert_model.T_low
+        return self.T_high[state, action] - self.T_low[state, action]
 
-        # Form estimate lower/upper bound for each state, action.
-        for s in range(agent_model.nS):
-            for a in range(agent_model.nA):
-                for s_ in range(agent_model.nS):
-                    if agent_size[s, a, s_] > expert_size[s, a, s_]:
-                        T_high[s, a, s_] = expert_model.T_high[s, a, s_]
-                        T_low[s, a, s_] = expert_model.T_low[s, a, s_]
+    def merge(self, s, a, T_low_s_a_, T_high_s_a_):
+        """
+        Merges self with new transition probabilities if these are tighter.
+        Returns true if the bounds are updated.
 
-        # Ignore reward for now.
-        return HighLowModel(T_low, T_high, expert_model.R)
+        """
+
+        improved = T_high_s_a_ - T_low_s_a_ < self.interval_sizes(s, a)
+        self.T_high[s, a][improved] = T_high_s_a_[improved]
+        self.T_low[s, a][improved] = T_low_s_a_[improved]
+
+        # Return whether anything is updated.
+        return np.any(improved)
 
 class HighLowModel(PseudoEnv):
     """

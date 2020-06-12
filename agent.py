@@ -26,10 +26,6 @@ class ModelBasedLearner:
         self.T = np.ones((nS, nA, nS)) / (nS)
         self.R = np.zeros((nS, nA))
 
-        # Stores ubs and lbs on learned transition probabilities.
-        self.T_low = np.zeros((nS, nA))
-        self.T_high = np.ones((nS, nA))
-
     def reset(self):
         '''
         Reset the agent to the begin state for next run
@@ -45,15 +41,18 @@ class ModelBasedLearner:
         self.T = np.ones((self.nS, self.nA, self.nS)) / (self.nS)
         self.R = np.zeros((self.nS, self.nA))
 
-
     def process_experience(self, state, action, next_state, reward, done):
         """
         Update the transition probabilities and rewards based on the state, 
         action, next state and reward.
 
+        Returns a pseudo env as learned by agent. The pseudo env consists of
+        lower and upper bounds for the transition probabilities, calculated
+        using the epsilon-confidence measure on the current distribution.
+
         """
 
-        # Only update model if within model size (see section 3 bullet point 7)
+        # Only update model if within model size, see section 3 bullet point 7.
         if np.sum(self.n[state][action]) < self.m:
             # Increment the # times s, a, s' was observed.
             self.n[state][action][next_state] += 1
@@ -61,14 +60,13 @@ class ModelBasedLearner:
             # Adjust mean probability and reward estimate accordingly.
             self.T[state][action] = (self.n[state][action]) / ( np.sum(self.n[state][action]))
             self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
-            
-            epsilon_t = self.epsilon_t(state, action)
-            self.T_low[state][action] = np.maximum(
-                self.T[state][action] - epsilon_t, 0
-            )
-            self.T_high[state][action] = np.minimum(
-                self.T[state][action] + epsilon_t, 1
-            )
+
+        # Return high and low confidence probabilities on s, a transition.
+        epsilon_t = self.epsilon_t(state, action)
+        T_low_s_a = np.maximum(self.T[state][action] - epsilon_t, 0)
+        T_high_s_a = np.minimum(self.T[state][action] + epsilon_t, 1)
+
+        return T_low_s_a, T_high_s_a
 
     def select_action(self, state):
         """
@@ -102,17 +100,6 @@ class ModelBasedLearner:
 
         return np.argmax(self.Q, axis = 1)
 
-    def learned_model(self):
-        """
-        Returns a pseudo env as learned by agent. The pseudo env consists of
-        lower and upper bounds for the transition probabilities, calculated
-        using the epsilon-confidence measure on the current distribution.
-
-        """
-
-        # For now assume rewards have no interval.
-        return HighLowModel(self.T_low, self.T_high, self.R)
-
     def epsilon_r(self, state, action):
         """
         Returns the epsilon determining confidence interval for the reward
@@ -130,10 +117,9 @@ class ModelBasedLearner:
 
         """
 
-        # Note, I suppose there is a mistake in the paper (equation 5).
-        return np.sqrt(
-            (2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T))
-            / np.sum(self.n[state][action]))
+        if np.sum(self.n[state][action]) > 0:
+            return np.sqrt((2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T)) / np.sum(self.n[state][action]))
+        return 1
 
 class MBIE(ModelBasedLearner):
     """

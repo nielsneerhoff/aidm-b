@@ -15,6 +15,9 @@ class Expert:
         # Stores current state value intervals.
         self.Q_pes = np.ones((env.nS, env.nA))
 
+        # Performs pessimistic value iteration.
+        self.value_iteration()
+
     def value_iteration(self):
         """
         Perform value iteration based on the expert model.
@@ -82,13 +85,13 @@ class Expert:
         best_value = self.Q_pes[state, best_action]
         return best_action, best_value
 
-    def random_action(self, state, q_value, rho):
+    def safe_actions(self, state, rho):
         """
-        Returns a random action with higher value than (1 - rho) * q_value, if it exists.
+        Returns a safe action for state.
 
         """
 
-        actions = np.arange(0, self.env.nA, 1)
-        within_strictness = actions[
-            self.Q_pes[state] >= (1 - rho) * q_value]
-        return np.random.choice(within_strictness)
+        max_value = self.Q_pes[state].max()
+        safe = np.arange(0, self.env.nA)[
+            self.Q_pes[state] >= max_value * (1 - rho)]
+        return np.random.choice(safe)
