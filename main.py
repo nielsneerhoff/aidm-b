@@ -9,9 +9,9 @@ from mediator import Mediator
 from utils import *
 from metrics import Metrics, write_metrics_to_file
 
-env = gym.make("gym_factored:optpes-v0")
+env = gym.make("gym_factored:river-swim-v0")
 
-def learn_online(env, agent, mediator, metrics):
+def learn_online(env, agent, metrics, mediator = None):
     for run in range(NO_RUNS):
         agent.reset()
         state = env.reset()
@@ -19,7 +19,10 @@ def learn_online(env, agent, mediator, metrics):
         agent_model = None
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
-            action = agent.select_action(state)
+            if mediator is None:
+                action = mediator.select_action(state, agent_model)
+            else:
+                action = agent.select_action(state)
             new_state, reward, done, info = env.step(action)
             # print(state, action, new_state)
             # cum_reward += reward
@@ -28,7 +31,7 @@ def learn_online(env, agent, mediator, metrics):
             state = new_state
             agent.value_iteration(MAX_ITERATIONS, DELTA)
             if i % 100 == 0:
-                print('Iteration', i, 'run', run, '\t', agent.max_policy(), '\n', agent.Q)
+                print('Iteration', i, 'run', run, 'name', metrics.name, '\t', agent.max_policy(), '\n', agent.Q)
             # action = mediator.select_action(state, agent_model)
             # mediator_action = mediator.select_action(state, agent_model)
         metrics.calculate_sample_complexity(run)
@@ -59,12 +62,12 @@ mediator = Mediator(expert)
 
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
 
-print(learn_online(env, mbie_agent, mediator, mbie_metrics))
+print(learn_online(env, mbie_agent, mbie_metrics))
 
 
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 
-print(learn_online(env, mbie_eb_agent, mediator, mbie_eb_metrics))
+print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
 
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'output')
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'rivers-swim-output')
