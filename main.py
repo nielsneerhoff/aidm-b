@@ -27,15 +27,16 @@ def learn_online(env, agent, mediator, metrics):
             metrics.update_metrics(run, state, action, reward, i)
             state = new_state
             agent.value_iteration(MAX_ITERATIONS, DELTA)
-            print('Iteration', i, '\t', agent.max_policy(), '\n', agent.Q)
-            action = mediator.select_action(state, agent_model)
-            mediator_action = mediator.select_action(state, agent_model)
+            if i % 100 == 0:
+                print('Iteration', i, 'run', run, '\t', agent.max_policy(), '\n', agent.Q)
+            # action = mediator.select_action(state, agent_model)
+            # mediator_action = mediator.select_action(state, agent_model)
         metrics.calculate_sample_complexity(run)
     return agent.Q#, cum_reward
 
 # Initialize agents.
 m = MAX_EPISODES # Model size could be infinite.
-beta = ((env.reward_range[1] - env.reward_range[0]) / (1 - GAMMA)) * np.sqrt(np.log(2 * env.nS * env.nA * m / DELTA_R) / 2) # lemma 7
+beta = ((env.reward_range[1] - env.reward_range[0]) / (1 - GAMMA)) * np.sqrt(np.log(2 * env.nS * env.nA * m / DELTA) / 2) # lemma 7
 mbie_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 
@@ -66,4 +67,4 @@ mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 print(learn_online(env, mbie_eb_agent, mediator, mbie_eb_metrics))
 
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'test')
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'output')
