@@ -3,13 +3,10 @@ import numpy as np
 from sys import maxsize
 
 from agent import MBIE, MBIE_EB
-from expert import Expert
 from pseudo_env import OffsetModel, HighLowModel, expected_rewards
 from mediator import Mediator
 from utils import *
 from metrics import Metrics, write_metrics_to_file
-
-env = gym.make("gym_factored:river-swim-v0")
 
 def learn_online(env, agent, metrics, mediator):
     for run in range(NO_RUNS):
@@ -33,35 +30,25 @@ def learn_online(env, agent, metrics, mediator):
         metrics.calculate_sample_complexity(run)
     return agent.Q #, cum_reward
 
-# Initialize agents.
+# Initialize problem env.
+env = gym.make("gym_factored:river-swim-v0")
 m = MAX_EPISODES # Model size could be infinite.
-beta = ((env.reward_range[1] - env.reward_range[0]) / (1 - GAMMA)) * np.sqrt(np.log(2 * env.nS * env.nA * m / DELTA) / 2) # lemma 7
+beta = BETA(env.reward_range, env.nS, env.nA, m)
 
-R = expected_rewards(env)
-T = env.get_transition_function(env.nA, env.nS)
-expert_model = OffsetModel(T, 0.2, R)
+# Initialize agents.
 mbie_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 
-# Intialize expert & mediator.
-T = env.get_transition_function(env.nA, env.nS)
-# T_low = T.copy()
-# T_low[0, 1, 3] = 0.4
-# T_high = T.copy()
+# Initialize expert model & mediator.
+expert_model = OffsetModel.from_env(env, 0.1)
+mediator = Mediator(expert_model, rho = 0.3)
 
-expert = Expert(expert_model)
-mediator = Mediator(expert, rho = 0.3)
-
-# Initialize metrics.
-# expert.value_iteration()
-
+# Initialize metrics for counting.
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
-
-print(learn_online(env, mbie_agent, mbie_metrics, mediator))
-
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 
+# Run.
+print(learn_online(env, mbie_agent, mbie_metrics, mediator))
 print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
-
 
 write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'rivers-swim-output')

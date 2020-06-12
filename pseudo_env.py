@@ -1,5 +1,6 @@
 import numpy as np
 from gym.envs.toy_text.discrete import DiscreteEnv
+from utils import MAX_ITERATIONS, DELTA, GAMMA
 
 class PseudoEnv(DiscreteEnv):
     """
@@ -17,6 +18,9 @@ class PseudoEnv(DiscreteEnv):
         self.T_low, self.T_high = T_low, T_high
         self.R = R
 
+        # Compute q-values for current pseudo-env.
+        self.Q_pes = self.value_iteration()
+
     def interval_sizes(self, state, action):
         """
         Returns the sizes of the interval of each next state probability.
@@ -28,7 +32,7 @@ class PseudoEnv(DiscreteEnv):
     def merge(self, s, a, T_low_s_a_, T_high_s_a_):
         """
         Merges self with new transition probabilities if these are tighter.
-        Returns true if the bounds are updated.
+        Performs new value iteration if new bounds are tighter.
 
         """
 
@@ -36,8 +40,100 @@ class PseudoEnv(DiscreteEnv):
         self.T_high[s, a][improved] = T_high_s_a_[improved]
         self.T_low[s, a][improved] = T_low_s_a_[improved]
 
-        # Return whether anything is updated.
-        return np.any(improved)
+        # If anything improved, do new value iteration.
+        if np.any(improved): # TODO: Add numerical condition?
+            self.Q_pes = self.value_iteration()
+
+    def value_iteration(self):
+        """
+        Perform value iteration based on the expert model.
+
+        """
+
+        # Init to zero.
+        self.Q_pes = np.zeros((self.nS, self.nA))
+
+        for i in range(MAX_ITERATIONS):
+            # Find the current values (maximum action at states).
+            Q_pes = np.array(self.Q_pes)
+            Q_pes_state_values = np.max(Q_pes, axis = 1)
+
+            # Sort on state lb's in increasing order.
+            permutation = np.argsort(Q_pes_state_values)
+            self.Q_pes = self.value_iterate(
+                permutation, Q_pes_state_values)
+
+            # If converged, break.
+            if i > 1000 and np.abs(np.sum(Q_pes) - np.sum(self.Q_pes)) < DELTA:
+                break
+
+        return self.Q_pes
+
+    def pessimistic_value_iterate(self):
+        """
+        Performs one iteration of pessimistic value updates. Returns new value intervals for each state, and whether the update difference was smaller than delta.
+
+        """
+
+        # Find the current values (maximum action at states).
+        Q_pes_new = np.array(self.Q_pes)
+        Q_pes_state_values = np.max(Q_pes_new, axis = 1)
+
+        # Sort on state lb's in increasing order.
+        permutation = np.argsort(Q_pes_state_values)
+        Q_pes_new = self.value_iterate(
+            permutation, Q_pes_state_values)
+
+        return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
+
+    def value_iterate(self, permutation, q_values):
+        """
+        Perform one value iteration based on permutation. Returns numpy array with for each state action pair the estimated Q value.
+
+        """
+
+        F = np.zeros((self.nS, self.nA, self.nS))
+
+        # Find order-maximizing/minimizing MDP for permutation.
+        for state in range(self.nS):
+            for action in range(self.nA):
+                used = np.sum(self.T_low[state, action])
+                remaining = 1 - used
+                for next_state in permutation:
+                    minimum = self.T_low[state, action, next_state]
+                    desired = self.T_high[state, action, next_state]
+                    if desired <= remaining:
+                        F[state, action, next_state] = minimum + desired
+                    else:
+                        F[state, action, next_state] = minimum + remaining
+                    remaining = max(0, remaining - desired)
+
+        # Update Q-values using order-maximizing/minimizing MDP.
+        Qnew = np.zeros((self.nS, self.nA))
+        for p in permutation:
+            Qnew[p] = self.R[p] + GAMMA * np.dot(F[p], q_values.T)
+        return Qnew
+
+    def best_action_value(self, state):
+        """
+        Returns the best action and its value for current state.
+
+        """
+
+        best_action = np.argmax(self.Q_pes[state])
+        best_value = self.Q_pes[state, best_action]
+        return best_action, best_value
+
+    def safe_action(self, state, lb_value):
+        """
+        Returns a safe action for current state.
+
+        """
+
+        max_value = self.Q_pes[state].max()
+        safe = np.arange(0, self.nA)[
+            self.Q_pes[state] >= lb_value]
+        return np.random.choice(safe)
 
 class HighLowModel(PseudoEnv):
     """

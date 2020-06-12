@@ -1,6 +1,5 @@
 import numpy as np
 
-from expert import Expert
 from pseudo_env import PseudoEnv
 
 class Mediator:
@@ -9,18 +8,17 @@ class Mediator:
 
     """
 
-    def __init__(self, expert, rho):
+    def __init__(self, expert_model, rho):
         """
         Sets the properties of this mediator.
 
         """
 
-        self.model = expert.env # Merged model.
-        self.expert = expert
-        self.merged = expert # Init to expert.
-        self.updated = False
+        # Init the two models.
+        self.expert_model = expert_model
+        self.merged_model = expert_model 
 
-        # Guaruantees agent follows 1 - rho opt. pessimistic expert policy.
+        # Agent follows 1 - rho opt. pessimistic expert policy.
         self.rho = rho
 
     def process_experience(self, state, action, T_low_s_a_, T_high_s_a_):
@@ -30,8 +28,7 @@ class Mediator:
 
         """
 
-        self.updated = self.model.merge(
-            state, action, T_low_s_a_, T_high_s_a_)
+        self.merged_model.merge(state, action, T_low_s_a_, T_high_s_a_)
 
     def select_action(self, state):
         """
@@ -40,26 +37,22 @@ class Mediator:
 
         """
 
-        # Find safe q-value and action.
-        safe_action = self.safe_actions[state]
-        safe_q_value = self.safe_q_values[state]
+        # Find what expert would do.
+        best_action, best_value = self.expert_model.best_action_value(state)
+        safe_action = self.expert_model.safe_action(
+            state, (1 - self.rho) * best_value)
 
-        if self.updated:
-            self.merged = Expert(self.model)
-            self.updated = False
-
-        merged_action, merged_value = self.merged.best_action_value(state)
-        print(merged_value, safe_q_value, merged_value > merged_value)
-        if merged_value > self.merged_expert.Q_pes[state][safe_action]:
+        # Find what we would do based on merged model.
+        merged_action, merged_value = self.merged_model.best_action_value(state)
+        if merged_value > self.merged_model.Q_pes[state][best_action]:
             return merged_action
+
+        return safe_action
 
         # If merged model (i.e., agent) found higher q-value, pick greedy.
         # if merged_value > safe_q_value:
         #     print(state, merged_action, merged_value)
         #     return merged_action
-
-        # Else, pick action within 1 - rho of expert pessimistic opt.
-        return self.expert.safe_action(state, self.rho)
 
     def random_action(self, state):
         """
