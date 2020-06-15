@@ -24,7 +24,7 @@ def learn_online(env, agent, metrics):
             if i % 100 == 0:
                 print('Iteration', i, 'run', run, 'reward', metrics.cumulative_rewards[run, i], '\t', agent.max_policy(), '\n', agent.Q)
         metrics.calculate_sample_complexity(run)
-    return agent.Q #, cum_reward
+    return agent.Q
 
 # Initialize problem env.
 env = gym.make("gym_factored:river-swim-v0")

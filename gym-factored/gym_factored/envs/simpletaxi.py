@@ -2,9 +2,9 @@ import numpy as np
 from gym.envs.toy_text.discrete import DiscreteEnv
 
 
-ACTION1 = 0
-ACTION2 = 1
-ACTION3 = 2
+ACTION0 = 0
+ACTION1 = 1
+ACTION2 = 2
 
 class SimpleTaxi(DiscreteEnv):
     """
@@ -36,29 +36,29 @@ class SimpleTaxi(DiscreteEnv):
         t = np.zeros((ns, na, ns))
 
         #State 0
-        t[0, ACTION1, 1] = 0.75
-        t[0, ACTION1, 0] = 0.25
-        t[0, ACTION2, 2] = 0.70
-        t[0, ACTION2, 0] = 0.30
-        t[0, ACTION3, 3] = 0.8
-        t[0, ACTION3, 0] = 0.20
+        t[0, ACTION0, 1] = 0.75
+        t[0, ACTION0, 0] = 0.25
+        t[0, ACTION1, 2] = 0.70
+        t[0, ACTION1, 0] = 0.30
+        t[0, ACTION2, 3] = 0.8
+        t[0, ACTION2, 0] = 0.20
 
 
         #State 1
+        t[1, ACTION0, 1] = 1
         t[1, ACTION1, 0] = 1
         t[1, ACTION2, 0] = 1
-        t[1, ACTION3, 0] = 1
        
    
         #State 2
-        t[2, ACTION1, 0] = 1
+        t[2, ACTION0, 0] = 1
+        t[2, ACTION1, 2] = 1
         t[2, ACTION2, 0] = 1
-        t[2, ACTION3, 0] = 1
 
         #State 3
+        t[3, ACTION0, 0] = 1
         t[3, ACTION1, 0] = 1
-        t[3, ACTION2, 0] = 1
-        t[3, ACTION3, 0] = 1
+        t[3, ACTION2, 3] = 1
 
         return t
 
@@ -66,12 +66,17 @@ class SimpleTaxi(DiscreteEnv):
         r = np.zeros((ns, na, ns))
 
 
-        r[0, ACTION1, 1] = 100
+        r[0, ACTION0, 1] = 0
+        r[0, ACTION0, 0] = 0
+        r[0, ACTION1, 2] = 0
         r[0, ACTION1, 0] = 0
-        r[0, ACTION2, 2] = 100
+        r[0, ACTION2, 3] = 0
         r[0, ACTION2, 0] = 0
-        r[0, ACTION3, 3] = 100
-        r[0, ACTION3, 0] = 0
+
+        #self-loops
+        r[1, ACTION0, 1] = 100
+        r[2, ACTION1, 2] = 100
+        r[3, ACTION2, 3] = 100
      
         return r
 
