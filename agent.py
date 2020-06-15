@@ -5,7 +5,7 @@ from sys import maxsize
 
 from pseudo_env import HighLowModel
 
-from utils import GAMMA, DELTA_R, DELTA_T, MAX_ITERATIONS, DELTA
+from utils import GAMMA, DELTA_R, DELTA_T, MAX_ITERATIONS, DELTA, MAX_EPISODES
 
 
 class ModelBasedLearner:
