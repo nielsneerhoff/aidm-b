@@ -5,7 +5,8 @@ from sys import maxsize
 
 from pseudo_env import HighLowModel
 
-from utils import GAMMA, DELTA_R, DELTA_T
+from utils import GAMMA, DELTA_R, DELTA_T, MAX_ITERATIONS, DELTA
+
 
 class ModelBasedLearner:
     def __init__(self, nS, nA, m, R_range):
@@ -41,7 +42,7 @@ class ModelBasedLearner:
         self.T = np.ones((self.nS, self.nA, self.nS)) / (self.nS)
         self.R = np.zeros((self.nS, self.nA))
 
-    def process_experience(self, state, action, next_state, reward, done):
+    def process_experience(self, state, action, next_state, reward):
         """
         Update the transition probabilities and rewards based on the state, 
         action, next state and reward.
@@ -68,7 +69,7 @@ class ModelBasedLearner:
 
         return T_low_s_a, T_high_s_a
 
-    def select_action(self, state):
+    def select_greedy_action(self, state):
         """
         Returns a greedy action, based on the current state.
 
@@ -76,18 +77,18 @@ class ModelBasedLearner:
 
         return np.argmax(self.Q[state])
 
-    def value_iteration(self, max_iterations, delta):
+    def value_iteration(self):
         """
         Perform value iteration on current model.
 
         """
 
         Qnew = np.array(self.Q)
-        for i in range(max_iterations):
+        for i in range(MAX_ITERATIONS):
             for state in range(self.nS):
                 for action in range(self.nA):
                     Qnew[state][action] = self.q_value(state, action)
-            if np.abs(np.sum(self.Q) - np.sum(Qnew)) < delta:
+            if np.abs(np.sum(self.Q) - np.sum(Qnew)) < DELTA:
                 break
             self.Q = np.array(Qnew)
         return self.Q
@@ -120,6 +121,7 @@ class ModelBasedLearner:
         if np.sum(self.n[state][action]) > 0:
             return np.sqrt((2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T)) / np.sum(self.n[state][action]))
         return 1
+
 
 class MBIE(ModelBasedLearner):
     """
@@ -181,6 +183,14 @@ class MBIE(ModelBasedLearner):
             next_index += 1
         return T
 
+    def select_action(self, state):
+        """
+        Returns a greedy action for state.
+
+        """
+
+        return super().select_greedy_action(state)
+
 class MBIE_EB(ModelBasedLearner):
     """
     MBIE-EB agent.
@@ -208,3 +218,77 @@ class MBIE_EB(ModelBasedLearner):
             return self.beta / np.sqrt(np.sum(self.n[state][action]))
         else:
             return self.beta
+    
+    def select_action(self, state):
+        """
+        Returns a greedy action for state.
+
+        """
+
+        return super().select_greedy_action(state)
+
+
+class Mediator(ModelBasedLearner):
+    """
+    Represents the mediator between the expert and agent: the class that 
+    selects the actions based on both models.
+
+    """
+
+    def __init__(self, expert_model, rho):
+        """
+        Sets the properties of this mediator.
+
+        """
+
+        # Init the two models.
+        self.expert_model = expert_model
+        self.merged_model = self.expert_model.copy()
+
+        # Agent follows 1 - rho opt. pessimistic expert policy.
+        self.rho = rho
+
+        # Init superclass.
+        super().__init__(expert_model.nS, expert_model.nA, np.infty, expert_model.reward_range)
+
+    def process_experience(self, state, action, next_state, reward):
+        """
+        Processes the experiences of the agent: updates the merged model
+        transition probabilities if the result is tighter.
+
+        """
+
+        # Process experience.
+        T_low_s_a_, T_high_s_a_ = super().process_experience(
+            state, action, next_state, reward)
+
+        # Merge resulting model with expert model.
+        self.merged_model.merge(state, action, T_low_s_a_, T_high_s_a_)
+
+    def select_action(self, state):
+        """
+        Returns an action to select based on the current merged model, if it 
+        has been updated. Otherwise returns a (random/safe) expert action.
+
+        """
+
+        # Find what expert would do.
+        best_action, best_value = self.expert_model.best_action_value(state)
+
+        # Find what we would do based on merged model.
+        merged_action, merged_value = self.merged_model.best_action_value(state)
+
+        # If expert and merged action are unequal -> return merged action
+        if merged_value > self.merged_model.Q_pes[state][best_action]:
+            return merged_action
+
+        return self.merged_model.safe_action(
+            state, (1 - self.rho) * merged_value)
+
+    def value_iteration(self):
+        """
+        Performs pessimistic value iteration on the merged model.
+
+        """
+
+        self.Q = self.merged_model.value_iteration()

@@ -19,6 +19,7 @@ class PseudoEnv(DiscreteEnv):
         self.R = R
 
         # Compute q-values for current pseudo-env.
+        self.improved = True
         self.Q_pes = self.value_iteration()
 
     def interval_sizes(self, state, action):
@@ -36,13 +37,14 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
+        self.improved = False
         improved = T_high_s_a_ - T_low_s_a_ - self.interval_sizes(s, a) < -1 * DELTA
         self.T_high[s, a][improved] = T_high_s_a_[improved]
         self.T_low[s, a][improved] = T_low_s_a_[improved]
 
-        # If anything improved, do new value iteration.
-        if np.any(improved): # TODO: Add numerical condition?
-            self.Q_pes = self.value_iteration()
+        # If sufficiently tightened, mark as such.
+        if np.any(improved):
+            self.improved = True
 
     def value_iteration(self):
         """
@@ -50,22 +52,24 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-        # Init to zero.
-        self.Q_pes = np.zeros((self.nS, self.nA))
+        if self.improved:
 
-        for i in range(MAX_ITERATIONS):
-            # Find the current values (maximum action at states).
-            Q_pes = np.array(self.Q_pes)
-            Q_pes_state_values = np.max(Q_pes, axis = 1)
+            # Init to zero.
+            self.Q_pes = np.zeros((self.nS, self.nA))
 
-            # Sort on state lb's in increasing order.
-            permutation = np.argsort(Q_pes_state_values)
-            self.Q_pes = self.value_iterate(
-                permutation, Q_pes_state_values)
+            for i in range(MAX_ITERATIONS):
+                # Find the current values (maximum action at states).
+                Q_pes = np.array(self.Q_pes)
+                Q_pes_state_values = np.max(Q_pes, axis = 1)
 
-            # If converged, break.
-            if i > 1000 and np.abs(np.sum(Q_pes) - np.sum(self.Q_pes)) < DELTA:
-                break
+                # Sort on state lb's in increasing order.
+                permutation = np.argsort(Q_pes_state_values)
+                self.Q_pes = self.value_iterate(
+                    permutation, Q_pes_state_values)
+
+                # If converged, break.
+                if i > 1000 and np.abs(np.sum(Q_pes) - np.sum(self.Q_pes)) < DELTA:
+                    break
 
         return self.Q_pes
 

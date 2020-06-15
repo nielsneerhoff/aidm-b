@@ -2,9 +2,8 @@ import gym
 import numpy as np
 from sys import maxsize
 
-from agent import MBIE, MBIE_EB
+from agent import MBIE, MBIE_EB, Mediator
 from pseudo_env import OffsetModel, HighLowModel, expected_rewards
-from mediator import Mediator
 from utils import *
 from metrics import Metrics, write_metrics_to_file
 from experts import SimpleTaxiExpert
@@ -18,9 +17,9 @@ def learn_online(env, agent, metrics):
             action = agent.select_action(state)
             new_state, reward, done, info = env.step(action)
             agent.process_experience(
-                state, action, new_state, reward, mediator)
+                state, action, new_state, reward)
             metrics.update_metrics(run, state, action, reward, i)
-            agent.value_iteration(MAX_ITERATIONS, DELTA)
+            agent.value_iteration()
             state = new_state
             if i % 100 == 0:
                 print('Iteration', i, 'run', run, 'reward', metrics.cumulative_rewards[run, i], '\t', agent.max_policy(), '\n', agent.Q)
@@ -48,6 +47,6 @@ mediator_metrics = Metrics(mediator, env, 'mediator')
 # Run.
 # print(learn_online(env, mbie_agent, mbie_metrics))
 # print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
-print(learn_online(env, mbie, mbie_metrics))
+print(learn_online(env, mediator, mediator_metrics))
 
 write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mediator_metrics], 'rivers-swim-output-3')
