@@ -12,8 +12,7 @@ class ExpertBounds():
         self.T_high = T_high
 
 class SimpleTaxiExpert(ExpertBounds):
-    
-    
+
     def __init__(self):
         self.nS = 4
         self.nA = 3

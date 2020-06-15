@@ -146,6 +146,20 @@ class PseudoEnv(DiscreteEnv):
         """
         return PseudoEnv(self.nS, self.nA, self.T_low.copy(), self.T_high.copy(), self.R.copy())
 
+    def __str__(self):
+        """
+        Prints the transition distribution.
+
+        """
+
+        output = 's a s\' t\n'
+        for s in range(self.nS):
+            for a in range(self.nA):
+                for s_ in range(self.nS):
+                    output += f'{s} {a} {s_} ({self.T_low[s, a, s_]} {self.T_high[s, a, s_]})\n'
+        return output
+
+
 class HighLowModel(PseudoEnv):
     """
     Represents a pseudo env as defined by a low and high transition probability distribution.

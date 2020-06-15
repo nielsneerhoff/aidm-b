@@ -33,6 +33,7 @@ beta = BETA(env.reward_range, env.nS, env.nA, m)
 
 # Initialize expert model. See pydoc for .from_env function.
 expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.1, 1)]])
+print(expert_model)
 
 # Initialize agents.
 mbie = MBIE(env.nS, env.nA, m, env.reward_range)
