@@ -153,7 +153,7 @@ class HighLowModel(PseudoEnv):
         super().__init__(nS, nA, T_low, T_high, R)
 
     @staticmethod
-    def from_env(env, *args):
+    def from_env(env, args):
         """
         Returns a pseudo-env as determined by arg env and args.
 
