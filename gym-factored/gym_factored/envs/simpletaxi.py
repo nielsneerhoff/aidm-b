@@ -1,9 +1,10 @@
 import numpy as np
 from gym.envs.toy_text.discrete import DiscreteEnv
 
-ACTION1 = 1
-ACTION2 = 2
-ACTION3 = 3
+
+ACTION1 = 0
+ACTION2 = 1
+ACTION3 = 2
 
 class SimpleTaxi(DiscreteEnv):
     """
@@ -65,12 +66,12 @@ class SimpleTaxi(DiscreteEnv):
         r = np.zeros((ns, na, ns))
 
 
-        t[0, ACTION1, 1] = 100
-        t[0, ACTION1, 0] = 0
-        t[0, ACTION2, 2] = 100
-        t[0, ACTION2, 0] = 0
-        t[0, ACTION3, 3] = 100
-        t[0, ACTION3, 0] = 0
+        r[0, ACTION1, 1] = 100
+        r[0, ACTION1, 0] = 0
+        r[0, ACTION2, 2] = 100
+        r[0, ACTION2, 0] = 0
+        r[0, ACTION3, 3] = 100
+        r[0, ACTION3, 0] = 0
      
         return r
 

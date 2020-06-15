@@ -8,6 +8,7 @@ from pseudo_env import OffsetModel, HighLowModel, expected_rewards
 from mediator import Mediator
 from utils import *
 from metrics import Metrics, write_metrics_to_file
+from experts import SimpleTaxiExpert
 
 env = gym.make("gym_factored:river-swim-v0")
 
@@ -44,8 +45,15 @@ T = env.get_transition_function(env.nA, env.nS)
 # T_low[0, 1, 3] = 0.4
 # T_high = T.copy()
 
+st_expert = SimpleTaxiExpert()
+expert_bounded_model = HighLowModel(st_expert.nS, st_expert.nA, st_expert.T_low, st_expert.T_high, st_expert.R)
+print(expert_bounded_model)
+
+
+
+
 R = expected_rewards(env)
-expert_model = OffsetModel(T, 0.3, R)
+expert_model = OffsetModel(T, 0.3, R)()
 # expert_model = OffsetModel(T, 0.3, R)
 
 # expert_model = OffsetModel.from_env(env, 0.2)

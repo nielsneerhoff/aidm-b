@@ -57,8 +57,7 @@ class HighLowModel(PseudoEnv):
 
     """
 
-    def __init__(self, T_low, T_high, R):
-        nS, nA = R.shape
+    def __init__(self,nS, nA, T_low, T_high, R):
         super().__init__(nS, nA, T_low, T_high, R)
 
 class OffsetModel(PseudoEnv):
