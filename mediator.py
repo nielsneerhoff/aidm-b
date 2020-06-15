@@ -16,7 +16,7 @@ class Mediator:
 
         # Init the two models.
         self.expert_model = expert_model
-        self.merged_model = expert_model 
+        self.merged_model = self.expert_model.copy()
 
         # Agent follows 1 - rho opt. pessimistic expert policy.
         self.rho = rho
@@ -39,20 +39,27 @@ class Mediator:
 
         # Find what expert would do.
         best_action, best_value = self.expert_model.best_action_value(state)
-        safe_action = self.expert_model.safe_action(
-            state, (1 - self.rho) * best_value)
 
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
         if merged_value > self.merged_model.Q_pes[state][best_action]:
             return merged_action
 
-        return safe_action
+        if best_value > self.expert_model.Q_pes[state][merged_action]:
+            return best_action
 
         # If merged model (i.e., agent) found higher q-value, pick greedy.
-        # if merged_value > safe_q_value:
-        #     print(state, merged_action, merged_value)
+        # if merged_value > best_value:
         #     return merged_action
+
+        # safe_action_merged = self.merged_model.safe_action(
+        #     state, (1 - self.rho) * merged_value
+        # )
+
+        safe_action = self.expert_model.safe_action(
+            state, (1 - self.rho) * best_value)
+        return safe_action
+
 
     def random_action(self, state):
         """

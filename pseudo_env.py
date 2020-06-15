@@ -36,7 +36,7 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-        improved = T_high_s_a_ - T_low_s_a_ < self.interval_sizes(s, a)
+        improved = T_high_s_a_ - T_low_s_a_ - self.interval_sizes(s, a) < -1 * DELTA
         self.T_high[s, a][improved] = T_high_s_a_[improved]
         self.T_low[s, a][improved] = T_low_s_a_[improved]
 
@@ -130,10 +130,17 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-        max_value = self.Q_pes[state].max()
         safe = np.arange(0, self.nA)[
             self.Q_pes[state] >= lb_value]
         return np.random.choice(safe)
+
+    def copy(self):
+        """Copy the opbject
+
+        :return: new object with same value
+        :rtype: PseudoEnv
+        """
+        return PseudoEnv(self.nS, self.nA, self.T_low.copy(), self.T_high.copy(), self.R.copy())
 
 class HighLowModel(PseudoEnv):
     """

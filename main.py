@@ -47,23 +47,19 @@ beta = BETA(env.reward_range, env.nS, env.nA, m)
 mbie_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 mbie_mediator_agent = MBIE(env.nS, env.nA, m, env.reward_range)
-mbie_eb_mediator_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 
 # Initialize expert model & mediator.
-expert_model = OffsetModel.from_env(env, 0.1)
+expert_model = OffsetModel.from_env(env, 0.2)
 mediator_mbie = Mediator(expert_model, rho = 0.3)
-mediator_mbie_eb = Mediator(expert_model, rho = 0.3)
 
 # Initialize metrics for counting.
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 mbie_mediator_metrics = Metrics(mbie_mediator_agent, env, 'mbie_mediator')
-mbie_eb_mediator_metrics = Metrics(mbie_eb_mediator_agent, env, 'mbie_eb_mediator')
 
 # Run.
-print(learn_online(env, mbie_agent, mbie_metrics))
-print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
+# print(learn_online(env, mbie_agent, mbie_metrics))
+# print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
 print(learn_online(env, mbie_mediator_agent, mbie_mediator_metrics, mediator_mbie))
-print(learn_online(env, mbie_eb_mediator_agent, mbie_eb_mediator_metrics, mediator_mbie_eb))
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mbie_mediator_metrics, mbie_eb_mediator_metrics], 'rivers-swim-output-2')
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mbie_mediator_metrics], 'rivers-swim-output-3')
