@@ -32,7 +32,7 @@ m = MAX_EPISODES # Model size could be infinite.
 beta = BETA(env.reward_range, env.nS, env.nA, m)
 
 # Initialize expert model. See pydoc for .from_env function.
-expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.1, 1)]])
+expert_model = HighLowModel.from_env(env, [])
 
 # Initialize agents.
 mbie = MBIE(env.nS, env.nA, m, env.reward_range)
@@ -45,8 +45,8 @@ mbie_eb_metrics = Metrics(mbie_eb, env, 'mbie_eb')
 mediator_metrics = Metrics(mediator, env, 'mediator')
 
 # Run.
-# print(learn_online(env, mbie_agent, mbie_metrics))
-# print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
+print(learn_online(env, mbie_agent, mbie_metrics))
+print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
 print(learn_online(env, mediator, mediator_metrics))
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mediator_metrics], 'rivers-swim-output-3')
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mediator_metrics], 'rivers-swim-output')
