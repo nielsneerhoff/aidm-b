@@ -168,6 +168,8 @@ class PseudoEnv(DiscreteEnv):
         for s in range(self.nS):
             for a in range(self.nA):
                 for s_ in range(self.nS):
+                    if self.T_low[s, a, s_] == 0 and self.T_high[s, a, s_] == 0:
+                        continue
                     output += f'{s} {a} {s_} ({self.T_low[s, a, s_]} {self.T_high[s, a, s_]})\n'
         return output
 
