@@ -82,16 +82,22 @@ class SimpleTaxiExpert(ExpertBounds):
 
         return t
     
+
     def get_reward_function(self, na, ns):
         r = np.zeros((ns, na, ns))
 
-        r[0, ACTION0, 1] = 100
+
+        r[0, ACTION0, 1] = 0
         r[0, ACTION0, 0] = 0
-        r[0, ACTION1, 2] = 100
+        r[0, ACTION1, 2] = 0
         r[0, ACTION1, 0] = 0
-        r[0, ACTION2, 3] = 100
+        r[0, ACTION2, 3] = 0
         r[0, ACTION2, 0] = 0
+
+        #self-loops
+        r[1, ACTION0, 1] = 100
+        r[2, ACTION1, 2] = 100
+        r[3, ACTION2, 3] = 100
      
         return r
-     
 
