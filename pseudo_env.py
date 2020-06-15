@@ -30,6 +30,16 @@ class PseudoEnv(DiscreteEnv):
 
         return self.T_high[state, action] - self.T_low[state, action]
 
+    def check_validity(self):
+        """
+        Checks the validity of the interval transition distributions. Lower 
+        bounds should sum up below 1, and upper bounds above 1.
+
+        """
+
+        assert np.all(
+            np.logical_and(np.sum(self.T_low, axis = 2) <= 1, np.sum(self.T_high, axis = 2) >= 1))
+
     def merge(self, s, a, T_low_s_a_, T_high_s_a_):
         """
         Merges self with new transition probabilities if these are tighter.
@@ -41,6 +51,8 @@ class PseudoEnv(DiscreteEnv):
         improved = T_high_s_a_ - T_low_s_a_ - self.interval_sizes(s, a) < -1 * DELTA
         self.T_high[s, a][improved] = T_high_s_a_[improved]
         self.T_low[s, a][improved] = T_low_s_a_[improved]
+
+        self.check_validity()
 
         # If sufficiently tightened, mark as such.
         if np.any(improved):
