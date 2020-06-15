@@ -38,7 +38,7 @@ class Mediator:
         """
 
         # Find what expert would do.
-        # best_action, best_value = self.expert_model.best_action_value(state)
+        best_action, best_value = self.expert_model.best_action_value(state)
 
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
@@ -47,25 +47,10 @@ class Mediator:
         if merged_value > self.merged_model.Q_pes[state][best_action]:
             return merged_action
 
-        test = self.merged_model.T_high - self.merged_model.T_low < self.expert_model.T_high - self.merged_model.T_low
-        if np.all(self.merged_model.T_high - self.merged_model.T_low < self.expert_model.T_high - self.merged_model.T_low):
-            return merged_action
-
-
-        # # If expert and merged action are unequal -> return best action
-        # if best_value > self.expert_model.Q_pes[state][merged_action]:
-        #     return best_action
-
-        # If merged model (i.e., agent) found higher q-value, pick greedy.
-        # if merged_value > best_value:
-        #     return merged_action
-
         safe_action_merged = self.merged_model.safe_action(
             state, (1 - self.rho) * merged_value
         )
 
-        safe_action = self.expert_model.safe_action(
-            state, (1 - self.rho) * best_value)
         return safe_action_merged
 
 
@@ -81,3 +66,12 @@ class Mediator:
         within_strictness = actions[
             self.safe_q_values >= (1 - self.rho) * max_safe_q_value]
         return np.random.choice(within_strictness)
+
+
+    def max_policy(self):
+        """
+        Return max policy of mediator
+
+        """
+        
+        return np.argmax(self.merged_model.Q_pes, axis=1)

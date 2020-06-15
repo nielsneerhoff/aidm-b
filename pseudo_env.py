@@ -169,8 +169,8 @@ class HighLowModel(PseudoEnv):
         for arg in args:
             s, a, s_ = arg[0], arg[1], arg[2]
             low, high = arg[3]
-            T_low[s, a, s] = low
-            T_high[s, a, s] = high
+            T_low[s, a, s_] = low
+            T_high[s, a, s_] = high
         return HighLowModel(T_low, T_high, R)
 
 class OffsetModel(PseudoEnv):

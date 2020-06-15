@@ -20,7 +20,7 @@ def learn_online(env, agent, metrics, mediator=None):
             else:
                 action = agent.select_action(state)
             new_state, reward, done, info = env.step(action)
-            print(state, action, new_state)
+            # print(state, action, new_state)
             # cum_reward += reward
             T_low_s_a, T_high_s_a = agent.process_experience(
                 state, action, new_state, reward, mediator)
@@ -40,7 +40,7 @@ def learn_online(env, agent, metrics, mediator=None):
     return agent.Q #, cum_reward
 
 # Initialize problem env.
-env = gym.make("gym_factored:simpletaxi-v0")
+env = gym.make("gym_factored:river-swim-v0")
 m = MAX_EPISODES # Model size could be infinite.
 beta = BETA(env.reward_range, env.nS, env.nA, m)
 
@@ -51,16 +51,17 @@ mbie_mediator_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 
 # Initialize expert model & mediator.
 # expert_model = OffsetModel.from_env(env, 0.2)
-expert_model = HighLowModel.from_env(env, [[0, 1, 0, (0.2, 0.3)]])
-mediator_mbie = Mediator(expert_model, rho = 0.3)
+expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.05, 0.5)], [3, 1, 4, (0.05, 0.5)], [2, 1, 3, (0.05, 0.5)]]) # [3, 1, 4, (0.0, 0.3)], [2, 1, 3, (0.0, 0.3)]
+mbie_mediator = Mediator(expert_model, rho = 0.3)
 
 # Initialize metrics for counting.
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
+mbie_mediator_metrics = Metrics(mbie_mediator_agent, env, 'mbie_mediator')
 
 # Run.
 # print(learn_online(env, mbie_agent, mbie_metrics))
 # print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
-print(learn_online(env, mbie_mediator_agent, mbie_metrics, mediator))
+print(learn_online(env, mbie_mediator_agent, mbie_metrics, mbie_mediator))
 
 write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mbie_mediator_metrics], 'rivers-swim-output-3')
