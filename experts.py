@@ -37,19 +37,19 @@ class SimpleTaxiExpert(ExpertBounds):
         t[0, ACTION2, 0] = 0.20 # Changed 0.50 to 0.20
 
         #State 1
-        t[1, ACTION0, 0] = 1
-        t[1, ACTION1, 0] = 1
-        t[1, ACTION2, 0] = 1
+        t[1, ACTION0, 0] = 0
+        t[1, ACTION1, 0] = 0
+        t[1, ACTION2, 0] = 0
 
         #State 2
-        t[2, ACTION0, 0] = 1
-        t[2, ACTION1, 0] = 1
-        t[2, ACTION2, 0] = 1
+        t[2, ACTION0, 0] = 0
+        t[2, ACTION1, 0] = 0
+        t[2, ACTION2, 0] = 0
 
         #State 3
-        t[3, ACTION0, 0] = 1
-        t[3, ACTION1, 0] = 1
-        t[3, ACTION2, 0] = 1
+        t[3, ACTION0, 0] = 0
+        t[3, ACTION1, 0] = 0
+        t[3, ACTION2, 0] = 0
 
         return t
 
