@@ -164,13 +164,19 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-        output = 's a s\' t\n'
+
+        output = 'Transition probabilities\n'
+        trans = 's a s\' t\n'
+        rewards = '\nRewards\ns a r\n'
         for s in range(self.nS):
             for a in range(self.nA):
+                if not self.R[s, a] == 0:
+                    rewards += f'{s} {a} {self.R[s, a]}\n'
                 for s_ in range(self.nS):
-                    if self.T_low[s, a, s_] == 0 and self.T_high[s, a, s_] == 0:
-                        continue
-                    output += f'{s} {a} {s_} ({self.T_low[s, a, s_]} {self.T_high[s, a, s_]})\n'
+                    if not (self.T_low[s, a, s_] == 0 and self.T_high[s, a, s_] == 0):
+                        trans += f'{s} {a} {s_} ({self.T_low[s, a, s_]} {self.T_high[s, a, s_]})\n'
+        output += trans
+        output += rewards
         return output
 
 
