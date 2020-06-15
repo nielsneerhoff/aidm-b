@@ -50,10 +50,9 @@ mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 mbie_mediator_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 
 # Initialize expert model & mediator.
-st_expert = SimpleTaxiExpert()
-R = expected_rewards(env)
-expert_model = HighLowModel(st_expert.T_low, st_expert.T_high, R)
-mediator = Mediator(expert_model, rho = 0.3)
+# expert_model = OffsetModel.from_env(env, 0.2)
+expert_model = HighLowModel.from_env(env)
+mediator_mbie = Mediator(expert_model, rho = 0.3)
 
 # Initialize metrics for counting.
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
