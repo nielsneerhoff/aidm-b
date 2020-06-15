@@ -51,7 +51,7 @@ mbie_mediator_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 
 # Initialize expert model & mediator.
 # expert_model = OffsetModel.from_env(env, 0.2)
-expert_model = HighLowModel.from_env(env, [[0, 1, 0, (0.2, 0.3)]])
+expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.1, 1)]])
 mediator_mbie = Mediator(expert_model, rho = 0.3)
 
 # Initialize metrics for counting.

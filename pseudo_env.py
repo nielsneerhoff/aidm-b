@@ -157,7 +157,7 @@ class HighLowModel(PseudoEnv):
         """
         Returns a pseudo-env as determined by arg env and args.
 
-        args consist of:
+        each arg in args consist of:
             s, a, s' (lb, ub)
 
         """
