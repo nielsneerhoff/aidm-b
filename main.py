@@ -8,25 +8,33 @@ from mediator import Mediator
 from utils import *
 from metrics import Metrics, write_metrics_to_file
 
-def learn_online(env, agent, metrics, mediator):
+def learn_online(env, agent, metrics, mediator=None):
     for run in range(NO_RUNS):
         agent.reset()
         state = env.reset()
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
-            action = mediator.select_action(state)
+            if mediator is not None:
+                action = mediator.select_action(state)
+            else:
+                action = agent.select_action(state)
             new_state, reward, done, info = env.step(action)
-            print(state, action, new_state)
+            # print(state, action, new_state)
             # cum_reward += reward
             T_low_s_a, T_high_s_a = agent.process_experience(
                 state, action, new_state, reward, mediator)
-            mediator.process_experience(
-                state, action, T_low_s_a, T_high_s_a)
+            if mediator is not None:
+                mediator.process_experience(
+                    state, action, T_low_s_a, T_high_s_a)
+            else:
+                agent.value_iteration(MAX_ITERATIONS, DELTA)
             metrics.update_metrics(run, state, action, reward, i)
             state = new_state
-            # agent.value_iteration(MAX_ITERATIONS, DELTA)
-            if i % 1000 == 0:
-                print('Iteration', i, 'run', run, '\t', agent.max_policy(), '\n', agent.Q)
+            if i % 100 == 0:
+                if mediator is not None:
+                    print('Iteration', i, 'run', run, '\t')
+                else:
+                    print('Iteration', i, 'run', run, 'reward', metrics.cumulative_rewards[run, i], '\t', agent.max_policy(), '\n', agent.Q)
         metrics.calculate_sample_complexity(run)
     return agent.Q #, cum_reward
 
@@ -38,17 +46,24 @@ beta = BETA(env.reward_range, env.nS, env.nA, m)
 # Initialize agents.
 mbie_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 mbie_eb_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
+mbie_mediator_agent = MBIE(env.nS, env.nA, m, env.reward_range)
+mbie_eb_mediator_agent = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 
 # Initialize expert model & mediator.
 expert_model = OffsetModel.from_env(env, 0.1)
-mediator = Mediator(expert_model, rho = 0.3)
+mediator_mbie = Mediator(expert_model, rho = 0.3)
+mediator_mbie_eb = Mediator(expert_model, rho = 0.3)
 
 # Initialize metrics for counting.
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
 mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
+mbie_mediator_metrics = Metrics(mbie_mediator_agent, env, 'mbie_mediator')
+mbie_eb_mediator_metrics = Metrics(mbie_eb_mediator_agent, env, 'mbie_eb_mediator')
 
 # Run.
-print(learn_online(env, mbie_agent, mbie_metrics, mediator))
+print(learn_online(env, mbie_agent, mbie_metrics))
 print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
+print(learn_online(env, mbie_mediator_agent, mbie_mediator_metrics, mediator_mbie))
+print(learn_online(env, mbie_eb_mediator_agent, mbie_eb_mediator_metrics, mediator_mbie_eb))
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics], 'rivers-swim-output')
+write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mbie_mediator_metrics, mbie_eb_mediator_metrics], 'rivers-swim-output-2')
