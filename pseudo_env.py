@@ -152,6 +152,27 @@ class HighLowModel(PseudoEnv):
         nS, nA = R.shape
         super().__init__(nS, nA, T_low, T_high, R)
 
+    @staticmethod
+    def from_env(env, *args):
+        """
+        Returns a pseudo-env as determined by arg env and args.
+
+        args consist of:
+            s, a, s' (lb, ub)
+
+        """
+
+        T = env.get_transition_function(env.nA, env.nS)
+        T_low = T.copy()
+        T_high = T.copy()
+        R = expected_rewards(env)
+        for arg in args:
+            s, a, s_ = arg[0], arg[1], arg[2]
+            low, high = arg[3]
+            T_low[s, a, s] = low
+            T_high[s, a, s] = high
+        return HighLowModel(T_low, T_high, R)
+
 class OffsetModel(PseudoEnv):
     """
     Represents a pseudo env as defined by a mean transition distribution plus/minus an offset.

@@ -64,7 +64,6 @@ class SimpleTaxiExpert(ExpertBounds):
         t[0, ACTION2, 3] = 0.80
         t[0, ACTION2, 0] = 1 # Changed 0.20 to 1
 
-
         #State 1
         t[1, ACTION0, 0] = 1
         t[1, ACTION1, 0] = 1
