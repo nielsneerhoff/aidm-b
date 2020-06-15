@@ -47,26 +47,8 @@ class Mediator:
         if merged_value > self.merged_model.Q_pes[state][best_action]:
             return merged_action
 
-        safe_action_merged = self.merged_model.safe_action(
-            state, (1 - self.rho) * merged_value
-        )
-
-        return safe_action_merged
-
-
-    def random_action(self, state):
-        """
-        Returns a random action with higher value than
-        (1 - rho) * safe_q_value, if it exists.
-
-        """
-
-        max_safe_q_value = self.safe_q_values.max()
-        actions = np.arange(0, self.merged_model.nA)
-        within_strictness = actions[
-            self.safe_q_values >= (1 - self.rho) * max_safe_q_value]
-        return np.random.choice(within_strictness)
-
+        return self.merged_model.safe_action(
+            state, (1 - self.rho) * merged_value)
 
     def max_policy(self):
         """
