@@ -38,15 +38,17 @@ class Mediator:
         """
 
         # Find what expert would do.
-        best_action, best_value = self.expert_model.best_action_value(state)
+        # best_action, best_value = self.expert_model.best_action_value(state)
 
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
-        if merged_value > self.merged_model.Q_pes[state][best_action]:
-            return merged_action
+        # if merged_value > self.merged_model.Q_pes[state][best_action]:
+            # return merged_action
 
-        if best_value > self.expert_model.Q_pes[state][merged_action]:
-            return best_action
+        # if best_value > self.expert_model.Q_pes[state][merged_action]:
+        #     return best_action
+
+        return merged_action
 
         # If merged model (i.e., agent) found higher q-value, pick greedy.
         # if merged_value > best_value:
@@ -56,9 +58,9 @@ class Mediator:
         #     state, (1 - self.rho) * merged_value
         # )
 
-        safe_action = self.expert_model.safe_action(
-            state, (1 - self.rho) * best_value)
-        return safe_action
+        # safe_action = self.expert_model.safe_action(
+        #     state, (1 - self.rho) * best_value)
+        # return safe_action
 
 
     def random_action(self, state):

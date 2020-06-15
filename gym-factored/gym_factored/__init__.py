@@ -86,3 +86,9 @@ register(
     entry_point='gym_factored.envs.optpes:OptPes',
     max_episode_steps=1000
 )
+
+register(
+    id='simpletaxi-v0',
+    entry_point='gym_factored.envs.simpletaxi:SimpleTaxi',
+    max_episode_steps=1000
+)
