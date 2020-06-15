@@ -51,8 +51,15 @@ mbie_mediator_agent = MBIE(env.nS, env.nA, m, env.reward_range)
 
 # Initialize expert model & mediator.
 # expert_model = OffsetModel.from_env(env, 0.2)
-expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.1, 1)]])
-mediator_mbie = Mediator(expert_model, rho = 0.3)
+
+stexpert = SimpleTaxiExpert()
+R = expected_rewards(env)
+
+expert_bounded_model = HighLowModel(stexpert.T_low, stexpert.T_high, R)
+mediator = Mediator(expert_bounded_model, rho = 0.3)
+
+# expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.1, 1)]])
+# mediator_mbie = Mediator(expert_model, rho = 0.3)
 
 # Initialize metrics for counting.
 mbie_metrics = Metrics(mbie_agent, env, 'mbie')
@@ -63,4 +70,4 @@ mbie_eb_metrics = Metrics(mbie_eb_agent, env, 'mbie_eb')
 # print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
 print(learn_online(env, mbie_mediator_agent, mbie_metrics, mediator))
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mbie_mediator_metrics], 'rivers-swim-output-3')
+# write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mbie_mediator_metrics], 'rivers-swim-output-3')
