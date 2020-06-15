@@ -38,7 +38,7 @@ class Mediator:
         """
 
         # Find what expert would do.
-        best_action, best_value = self.expert_model.best_action_value(state)
+        # best_action, best_value = self.expert_model.best_action_value(state)
 
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
