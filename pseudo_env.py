@@ -17,6 +17,7 @@ class PseudoEnv(DiscreteEnv):
         self.nS, self.nA = nS, nA
         self.T_low, self.T_high = T_low, T_high
         self.R = R
+        self.reward_range = np.min(R), np.max(R)
 
         # Compute q-values for current pseudo-env.
         self.improved = True

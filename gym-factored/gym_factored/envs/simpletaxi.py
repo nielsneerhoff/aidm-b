@@ -38,27 +38,27 @@ class SimpleTaxi(DiscreteEnv):
         #State 0
         t[0, ACTION0, 1] = 0.75
         t[0, ACTION0, 0] = 0.25
-        t[0, ACTION1, 2] = 0.70
-        t[0, ACTION1, 0] = 0.30
+        t[0, ACTION1, 2] = 0.55
+        t[0, ACTION1, 0] = 0.45
         t[0, ACTION2, 3] = 0.8
         t[0, ACTION2, 0] = 0.20
 
 
         #State 1
-        t[1, ACTION0, 1] = 1
+        t[1, ACTION0, 0] = 1
         t[1, ACTION1, 0] = 1
         t[1, ACTION2, 0] = 1
        
    
         #State 2
         t[2, ACTION0, 0] = 1
-        t[2, ACTION1, 2] = 1
+        t[2, ACTION1, 0] = 1
         t[2, ACTION2, 0] = 1
 
         #State 3
         t[3, ACTION0, 0] = 1
         t[3, ACTION1, 0] = 1
-        t[3, ACTION2, 3] = 1
+        t[3, ACTION2, 0] = 1
 
         return t
 
@@ -74,11 +74,18 @@ class SimpleTaxi(DiscreteEnv):
         r[0, ACTION2, 0] = 0
 
         #self-loops
-        r[1, ACTION0, 1] = 100
-        r[2, ACTION1, 2] = 100
-        r[3, ACTION2, 3] = 100
+        r[1, ACTION0, 0] = 100
+        r[2, ACTION1, 0] = 100
+        r[3, ACTION2, 0] = 100
      
         return r
 
     def render(self, mode='human'):
         pass
+
+    def reset(self):
+        """
+        Places the agent back on start state.
+
+        """
+        return 0

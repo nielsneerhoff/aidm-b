@@ -277,6 +277,7 @@ class Mediator(ModelBasedLearner):
 
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
+        
 
         # If expert and merged action are unequal -> return merged action
         if merged_value > self.merged_model.Q_pes[state][best_action]:

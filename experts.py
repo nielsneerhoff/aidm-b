@@ -26,7 +26,7 @@ class SimpleTaxiExpert(ExpertBounds):
         t = np.zeros((ns, na, ns))
 
         #State 0
-        t[0, ACTION0, 1] = 0.60
+        t[0, ACTION0, 1] = 0.65
         t[0, ACTION0, 0] = 0.20
         t[0, ACTION1, 2] = 0.70
         t[0, ACTION1, 0] = 0.10

@@ -15,6 +15,7 @@ def learn_online(env, agent, metrics):
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
             action = agent.select_action(state)
+            print(action)
             new_state, reward, done, info = env.step(action)
             agent.process_experience(
                 state, action, new_state, reward)
@@ -27,18 +28,20 @@ def learn_online(env, agent, metrics):
     return agent.Q
 
 # Initialize problem env.
-env = gym.make("gym_factored:river-swim-v0")
+env = gym.make("gym_factored:simpletaxi-v0")
 m = MAX_EPISODES # Model size could be infinite.
 beta = BETA(env.reward_range, env.nS, env.nA, m)
 
 # Initialize expert model. See pydoc for .from_env function.
-expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.1, 1)]])
+expert_model = HighLowModel.from_env(env, [[0,0,1,(0.6,0.8)],[0,1,2,(0.7,0.9)], [0,1,0,(0.1,0.3)],[0,2,3,(0.5,0.8)]])
+# expert_model = HighLowModel.from_env(env, [[4, 1, 5, (0.1, 1)]])
+
 print(expert_model)
 
 # Initialize agents.
 mbie = MBIE(env.nS, env.nA, m, env.reward_range)
 mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
-mediator = Mediator(expert_model, rho = 0.3)
+mediator = Mediator(expert_model, rho = 0.05)
 
 # Initialize metrics for counting.
 mbie_metrics = Metrics(mbie, env, 'mbie')
