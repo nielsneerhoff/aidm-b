@@ -286,31 +286,38 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         Updates KL divergence metric for transitions
 
-        for T: https://stats.stackexchange.com/questions/60619/how-to-calculate-kullback-leibler-divergence-distance?rq=1
+        for T: http://www.java2s.com/Code/Java/Development-Class/ReturnstheKLdivergenceKp1p2.htm
         for R: https://stats.stackexchange.com/questions/234757/how-to-use-kullback-leibler-divergence-if-mean-and-standard-deviation-of-of-two
 
         '''
-        with np.errstate(divide='ignore'):
-            # KL divergence transition: sum(Yt * log(Xt/Yt)) where Yt != 0
-            agent_transitions = self.agent.T[state, action][self.env_T[state, action] != 0]
-            env_transitions = self.env_T[state, action][self.env_T[state, action] != 0]
+        pass
+        # with np.errstate(divide='ignore'):
+        #     pass
+        #     # KL divergence transition: sum(Yt * log(Xt/Yt)) where Yt != 0
+        #     agent_transitions = self.agent.T[state, action]
+        #     env_transitions = self.env_T[state, action]
+        #     klDiv = 0.0
+        #     for i in range(len(agent_transitions)):
+        #         if agent_transitions[i] == 0 or env_transitions[i] == 0:
+        #             continue
+        #         else:
+        #             klDiv += agent_transitions[i] * np.log( agent_transitions[i] / env_transitions[i])
 
-            self.KL_divergence_T[run, state, action] = np.sum(env_transitions * np.log(agent_transitions / env_transitions))
+        #     self.KL_divergence_T[run, state, action] = klDiv
 
-            # KL divergence reward: log(std(Xt) / std(Yt)) + (std(Rt)^2 + (mean(Rt) - mean(Yt))^2) / (2 * std(Yt)^2)) - 0.5 where std(Yt) != 0
-            if self.env_std_reward[state, action] > 0: # and self.std_reward[state][action] > 0
-                self.KL_divergence_R[run, state, action] = np.log(self.env_std_reward[state, action] / self.std_reward[run, state, action]) + \
-                    (np.square(self.std_reward[run, state, action]) + np.square(self.agent.R[state, action] - self.env_mean_reward[state, action])) / \
-                        (2 * np.square(self.env_std_reward[state, action])) - 0.5
-        if np.isinf(np.sum(self.KL_divergence_R[run])):
-            self.KL_divergence_R_sum[run, step] = 2**30
-        else:
-            self.KL_divergence_R_sum[run, step] = np.sum(self.KL_divergence_R[run])
+        #     # KL divergence reward: log(std(Xt) / std(Yt)) + (std(Rt)^2 + (mean(Rt) - mean(Yt))^2) / (2 * std(Yt)^2)) - 0.5 where std(Yt) != 0
+        #     if self.env_std_reward[state, action] > 0: # and self.std_reward[state][action] > 0
+        #         self.KL_divergence_R[run, state, action] = np.log(self.env_std_reward[state, action] / self.std_reward[run, state, action]) + \
+        #             (np.square(self.std_reward[run, state, action]) + np.square(self.agent.R[state, action] - self.env_mean_reward[state, action])) / \
+        #                 (2 * np.square(self.env_std_reward[state, action])) - 0.5
 
-        if np.isinf(np.sum(self.KL_divergence_T[run])):
-            self.KL_divergence_T_sum[run, step] = 2**30
-        else:
-            self.KL_divergence_T_sum[run, step] = np.sum(self.KL_divergence_T[run])
+        # if np.isinf(np.sum(self.KL_divergence_R[run])):
+        #     self.KL_divergence_R_sum[run, step] = 2**30
+        # else:
+        #     self.KL_divergence_R_sum[run, step] = np.sum(self.KL_divergence_R[run])
+
+        # self.KL_divergence_T_sum[run, step] = np.sum(self.KL_divergence_T[run])
+        # print(self.KL_divergence_T_sum[run, step])
 
     def __update_max_policy_agent(self, run):
         '''
@@ -342,8 +349,8 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
         'runtime' : ['episode', 'runtime'],
         'cumulative_rewards' : ['episode', 'reward'],
         'reward_timeline' : ['episode', 'reward'],
-        'KL_divergence_T_sum' : ['episode', 'KL_div_T_sum'],
-        'KL_divergence_R_sum' : ['episode', 'KL_div_R_sum'],
+        # 'KL_divergence_T_sum' : ['episode', 'KL_div_T_sum'],
+        # 'KL_divergence_R_sum' : ['episode', 'KL_div_R_sum'],
         'coverage_error_squared_T' : ['episode', 'cov_err_sq_T'],
         'coverage_error_squared_R' : ['episode', 'cov_err_sq_R'],
         'instantaneous_loss' : ['episode', 'inst_loss']

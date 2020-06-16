@@ -235,7 +235,7 @@ class Mediator(ModelBasedLearner):
 
     """
 
-    def __init__(self, expert_model, rho):
+    def __init__(self, expert_model, rho, select_action_status = ''):
         """
         Sets the properties of this mediator.
 
@@ -248,8 +248,20 @@ class Mediator(ModelBasedLearner):
         # Agent follows 1 - rho opt. pessimistic expert policy.
         self.rho = rho
 
+        self.select_action_status = select_action_status
+
         # Init superclass.
         super().__init__(expert_model.nS, expert_model.nA, np.infty, expert_model.reward_range)
+
+
+    def reset(self):
+        """
+        Overload the reset 
+
+        """
+        super().reset()
+        self.merged_model = self.expert_model.copy()
+
 
     def process_experience(self, state, action, next_state, reward):
         """
@@ -274,13 +286,15 @@ class Mediator(ModelBasedLearner):
 
         # Find what expert would do.
         best_action, best_value = self.expert_model.best_action_value(state)
+        if self.select_action_status is 'expert_best_action':
+            return best_action
 
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
-        
 
         # If expert and merged action are unequal -> return merged action
-        if merged_value > self.merged_model.Q_pes[state][best_action]:
+        if merged_value > self.merged_model.Q_pes[state][best_action] and self.select_action_status is 'merged_best_action':
+        # if self.select_action_status is 'merged_best_action':
             return merged_action
 
         return self.merged_model.safe_action(

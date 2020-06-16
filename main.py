@@ -15,7 +15,7 @@ def learn_online(env, agent, metrics):
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
             action = agent.select_action(state)
-            print(action)
+            # print(action)
             new_state, reward, done, info = env.step(action)
             agent.process_experience(
                 state, action, new_state, reward)
@@ -42,15 +42,29 @@ print(expert_model)
 mbie = MBIE(env.nS, env.nA, m, env.reward_range)
 mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 mediator = Mediator(expert_model, rho = 0.05)
+mediator_expert_action = Mediator(expert_model, rho = 0.05, select_action_status = 'expert_best_action')
+mediator_merged_action = Mediator(expert_model, rho = 0.05, select_action_status = 'merged_best_action')
 
 # Initialize metrics for counting.
 mbie_metrics = Metrics(mbie, env, 'mbie')
 mbie_eb_metrics = Metrics(mbie_eb, env, 'mbie_eb')
 mediator_metrics = Metrics(mediator, env, 'mediator')
+mediator_expert_action_metrics = Metrics(mediator_expert_action, env, 'mediator_expert')
+mediator_merged_action_metrics = Metrics(mediator_merged_action, env, 'mediator_merged')
 
 # Run.
-# print(learn_online(env, mbie_agent, mbie_metrics))
-# print(learn_online(env, mbie_eb_agent, mbie_eb_metrics))
+print(learn_online(env, mbie, mbie_metrics))
+print(learn_online(env, mbie_eb, mbie_eb_metrics))
 print(learn_online(env, mediator, mediator_metrics))
+print(learn_online(env, mediator_expert_action, mediator_expert_action_metrics))
+print(learn_online(env, mediator_merged_action, mediator_merged_action_metrics))
 
-write_metrics_to_file([mbie_metrics, mbie_eb_metrics, mediator_metrics], 'rivers-swim-output-3')
+metrics_to_print = [
+    mbie_metrics, 
+    mbie_eb_metrics, 
+    mediator_metrics,
+    mediator_expert_action_metrics,
+    mediator_merged_action_metrics
+    ]
+
+write_metrics_to_file(metrics_to_print, 'simpletaxi-test')
