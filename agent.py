@@ -9,13 +9,11 @@ from utils import GAMMA, DELTA_R, DELTA_T, MAX_ITERATIONS, DELTA, MAX_EPISODES
 
 
 class ModelBasedLearner:
-    def __init__(self, nS, nA, m, R_range):
+    def __init__(self, nS, nA, m, R):
 
         # Env basics. R_range is tuple of min reward, max reward of env.
-        self.nS, self.nA = nS, nA
-        self.R_range = R_range
-
-        self.m = m
+        self.nS, self.nA, self.R, self.m = nS, nA, R, m
+        self.reward_range = (np.min(R), np.max(R))
 
         # Stores current state value estimates.
         self.Q_opt = np.zeros((nS, nA))
@@ -25,8 +23,6 @@ class ModelBasedLearner:
 
         # Stores transition probability estimates and reward estimates.
         self.T = np.ones((nS, nA, nS)) / (nS)
-        self.R = np.zeros((nS, nA))
-
 
     def reset(self):
         '''
@@ -42,13 +38,12 @@ class ModelBasedLearner:
 
         # Stores transition probability estimates and reward estimates.
         self.T = np.ones((self.nS, self.nA, self.nS)) / (self.nS)
-        self.R = np.zeros((self.nS, self.nA))
 
 
-    def process_experience(self, state, action, next_state, reward):
+    def process_experience(self, state, action, next_state):
         """
-        Update the transition probabilities and rewards based on the state, 
-        action, next state and reward.
+        Update the transition probabilities based on the state, 
+        action, and next state.
 
         """
 
@@ -59,7 +54,6 @@ class ModelBasedLearner:
 
             # Adjust mean probability and reward estimate accordingly.
             self.T[state][action] = (self.n[state][action]) / ( np.sum(self.n[state][action]))
-            self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
 
     def select_greedy_action(self, state, possibilities = None):
         """
@@ -106,16 +100,6 @@ class ModelBasedLearner:
 
         return np.argmax(self.Q_opt, axis = 1)
 
-    def epsilon_r(self, state, action):
-        """
-        Returns the epsilon determining confidence interval for the reward
-        distribution (eq. 2 of paper). Adapted to fit Hoeffding bound.
-
-        """
-
-        return np.sqrt(
-            np.log(2 / DELTA_R) / (2 * np.sum(self.n[state][action]))) * (self.R_range[1] - self.R_range[0])
-
     def epsilon_t(self, state, action):
         """
         Returns the epsilon determining confidence interval for the transition
@@ -126,7 +110,6 @@ class ModelBasedLearner:
         if np.sum(self.n[state][action]) > 0:
             return np.sqrt((2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T)) / np.sum(self.n[state][action]))
         return 1
-
 
 class MBIE(ModelBasedLearner):
     """
@@ -145,19 +128,16 @@ class MBIE(ModelBasedLearner):
 
         if np.sum(self.n[state][action]) > 0:
 
-            # Pick right-tail upper confidence bound on reward.
-            epsilon_r = self.epsilon_r(state, action)
-            max_R = self.R[state][action] + epsilon_r
-
             T_max = self.upper_transition_distribution(state, action)
+            R = self.R[state][action]
 
             # Return Q accordingly.
-            return max_R + GAMMA * np.dot(T_max, np.max(self.Q_opt, axis = 1))
+            return R + GAMMA * np.dot(T_max, np.max(self.Q_opt, axis = 1))
+
         else:
-            # return self.R_range[1] / (1 - GAMMA) # See paper below eq. 6.
             # Made up version to account for n = 0 initialization.
             return np.sqrt(np.log(2 / DELTA_R) / 2) * (
-                self.R_range[1] - self.R_range[0]) / (1 - GAMMA)
+                self.reward_range[1] - self.reward_range[0]) / (1 - GAMMA)
 
     def upper_transition_distribution(self, state, action):
         """
@@ -216,9 +196,10 @@ class MBIE_EB(ModelBasedLearner):
 
     def exploration_bonus(self, state, action):
         """
-        Exploration Bonus
+        Exploration bonus.
 
         """
+
         if np.sum(self.n[state][action]) > 0:
             return self.beta / np.sqrt(np.sum(self.n[state][action]))
         else:
@@ -231,7 +212,6 @@ class MBIE_EB(ModelBasedLearner):
         """
 
         return super().select_greedy_action(state)
-
 
 class Mediator(MBIE):
     """

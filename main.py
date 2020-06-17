@@ -15,11 +15,11 @@ def learn_online(env, agent, metrics):
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
             action = agent.select_action(state)
-            new_state, reward, _, _ = env.step(action)
+            new_state, _, _, _ = env.step(action)
             print(state, action, new_state)
             agent.process_experience(
-                state, action, new_state, reward)
-            metrics.update_metrics(run, state, action, reward, i)
+                state, action, new_state)
+            metrics.update_metrics(run, state, action, 0, i)
             agent.value_iteration()
             state = new_state
             if i % 100 == 0:
@@ -31,6 +31,7 @@ def learn_online(env, agent, metrics):
 env = gym.make("gym_factored:simpletaxi-v0")
 m = MAX_EPISODES # Model size could be infinite.
 beta = BETA(env.reward_range, env.nS, env.nA, m)
+R = expected_rewards(env) # Assume we know R in advance.
 
 # Initialize expert model. See pydoc for .from_env function.
 expert_model = HighLowModel.from_env(env, [[0,0,1,(0.6,0.8)],[0,1,2,(0.7,0.9)], [0,1,0,(0.1,0.3)],[0,2,3,(0.5,0.8)]])
@@ -39,7 +40,7 @@ expert_model = HighLowModel.from_env(env, [[0,0,1,(0.6,0.8)],[0,1,2,(0.7,0.9)], 
 print(expert_model)
 
 # Initialize agents.
-mbie = MBIE(env.nS, env.nA, m, env.reward_range)
+mbie = MBIE(env.nS, env.nA, m, R)
 mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
 mediator = Mediator(expert_model, rho = 0.05)
 mediator_expert_action = Mediator(expert_model, rho = 0.05, select_action_status = 'expert_best_action')
@@ -53,7 +54,7 @@ mediator_expert_action_metrics = Metrics(mediator_expert_action, env, 'mediator_
 mediator_merged_action_metrics = Metrics(mediator_merged_action, env, 'mediator_merged')
 
 # Run.
-# print(learn_online(env, mbie, mbie_metrics))
+print(learn_online(env, mbie, mbie_metrics))
 # print(learn_online(env, mbie_eb, mbie_eb_metrics))
 print(learn_online(env, mediator, mediator_metrics))
 print(learn_online(env, mediator_expert_action, mediator_expert_action_metrics))
