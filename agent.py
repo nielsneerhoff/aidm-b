@@ -66,8 +66,9 @@ class ModelBasedLearner:
         """
 
         if len(possibilities) > 0:
-            best_action = possibilities[
-                np.argmax(self.Q_opt[state][possibilities])]
+            # best_action = possibilities[
+            #     np.argmax(self.Q_opt[state][possibilities])]
+            best_action = np.random.choice(possibilities[self.Q_opt[state][possibilities] == np.max(self.Q_opt[state][possibilities])])
         else:
             best_action = np.argmax(self.Q_opt[state])
         return best_action
@@ -282,11 +283,11 @@ class Mediator(MBIE):
         # Find what expert would do.
         best_action, best_value = self.expert_model.best_action_value(state)
 
-        if self.select_action_status is 'expert_best_action':
-            return best_action
-
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
+        
+        if self.select_action_status is 'mediator_no_exploration':
+            return merged_action
 
         safe_actions = self.merged_model.safe_actions(
             state, (1 - self.rho) * merged_value)

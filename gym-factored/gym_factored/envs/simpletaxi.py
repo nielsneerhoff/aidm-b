@@ -14,8 +14,8 @@ class SimpleTaxi(DiscreteEnv):
     """
     def __init__(self):
         self.reward_range = 0, 100
-        ns = 4
-        na = 3 
+        ns = 5
+        na = 4 
         terminal_states = np.zeros(ns, dtype=bool)
 
         t = self.get_transition_function(na, ns)
@@ -87,14 +87,14 @@ class SimpleTaxi(DiscreteEnv):
         r[0, ACTION3, 4] = 0
 
         #self-loops
-        r[1, ACTION0, 0] = 100
+        r[1, ACTION0, 0] = 105
         r[2, ACTION1, 0] = 100
-        r[3, ACTION2, 0] = 100
+        r[3, ACTION2, 0] = 105
         #State 4
-        t[4, ACTION0, 0] = -150
-        t[4, ACTION1, 0] = -150
-        t[4, ACTION2, 0] = -150
-        t[4, ACTION3, 0] = -150
+        r[4, ACTION0, 0] = -150
+        r[4, ACTION1, 0] = -150
+        r[4, ACTION2, 0] = -150
+        r[4, ACTION3, 0] = -150
 
         
      
