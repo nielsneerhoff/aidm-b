@@ -271,7 +271,6 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         else:
             self.std_reward[run, state, action] = 0.
 
-    
     def __update_coverage_error_squared(self, run, step):
         '''
         Update discrete coverage error.

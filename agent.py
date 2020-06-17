@@ -18,7 +18,7 @@ class ModelBasedLearner:
         self.m = m
 
         # Stores current state value estimates.
-        self.Q = np.zeros((nS, nA))
+        self.Q_opt = np.zeros((nS, nA))
 
         # Stores # times s, a , s' was observed.
         self.n = np.zeros((nS, nA, nS))
@@ -32,8 +32,9 @@ class ModelBasedLearner:
         Reset the agent to the begin state for next run
 
         '''
+
         # Stores current state value estimates.
-        self.Q = np.zeros((self.nS, self.nA))
+        self.Q_opt = np.zeros((self.nS, self.nA))
 
         # Stores # times s, a , s' was observed.
         self.n = np.zeros((self.nS, self.nA, self.nS))
@@ -81,26 +82,26 @@ class ModelBasedLearner:
 
         if np.any(possibilities):
             best_action = possibilities[
-                np.argmax(self.Q[state][possibilities])]
+                np.argmax(self.Q_opt[state][possibilities])]
         else:
-            best_action = np.argmax(self.Q[state])
+            best_action = np.argmax(self.Q_opt[state])
         return best_action
 
     def value_iteration(self):
         """
-        Perform value iteration on current model.
+        Perform value iteration on the current model.
 
         """
 
-        Qnew = np.array(self.Q)
+        Qnew = np.zeros((self.nS, self.nA))
         for i in range(MAX_ITERATIONS):
             for state in range(self.nS):
                 for action in range(self.nA):
                     Qnew[state][action] = self.q_value(state, action)
-            if np.abs(np.sum(self.Q) - np.sum(Qnew)) < DELTA:
+            if np.abs(np.sum(self.Q_opt) - np.sum(Qnew)) < DELTA:
                 break
-            self.Q = np.array(Qnew)
-        return self.Q
+            self.Q_opt = np.array(Qnew)
+        return self.Q_opt
 
     def max_policy(self):
         """
@@ -108,7 +109,7 @@ class ModelBasedLearner:
 
         """
 
-        return np.argmax(self.Q, axis = 1)
+        return np.argmax(self.Q_opt, axis = 1)
 
     def epsilon_r(self, state, action):
         """
@@ -156,7 +157,7 @@ class MBIE(ModelBasedLearner):
             T_max = self.upper_transition_distribution(state, action)
 
             # Return Q accordingly.
-            return max_R + GAMMA * np.dot(T_max, np.max(self.Q, axis = 1))
+            return max_R + GAMMA * np.dot(T_max, np.max(self.Q_opt, axis = 1))
         else:
             # return self.R_range[1] / (1 - GAMMA) # See paper below eq. 6.
             # Made up version to account for n = 0 initialization.
@@ -172,7 +173,7 @@ class MBIE(ModelBasedLearner):
         """
 
         T = np.array(self.T[state][action])
-        next_states = np.argsort(np.max(self.Q, axis = 1))
+        next_states = np.argsort(np.max(self.Q_opt, axis = 1))
         desired_next_state = next_states[-1]
         
         # Add epsilon_t to most desired state, remove from others.
@@ -216,7 +217,7 @@ class MBIE_EB(ModelBasedLearner):
 
         """
 
-        return self.R[state][action] + GAMMA * np.dot(self.T[state][action], np.max(self.Q, axis = 1)) + self.exploration_bonus(state, action)
+        return self.R[state][action] + GAMMA * np.dot(self.T[state][action], np.max(self.Q_opt, axis = 1)) + self.exploration_bonus(state, action)
 
     def exploration_bonus(self, state, action):
         """
@@ -250,6 +251,15 @@ class Mediator(MBIE):
 
         """
 
+        # Copy basic env vars.
+        nS, nA, reward_range = expert_model.nS, expert_model.nA, expert_model.reward_range
+
+        # Init superclass.
+        super().__init__(nS, nA, np.infty, reward_range)
+
+        # Init pessimistic Q-values.
+        self.Q_pes = np.zeros((nS, nA))
+
         # Init the two models.
         self.expert_model = expert_model
         self.merged_model = self.expert_model.copy()
@@ -257,11 +267,8 @@ class Mediator(MBIE):
         # Agent follows 1 - rho opt. pessimistic expert policy.
         self.rho = rho
 
+        # Stores action-selection profile.
         self.select_action_status = select_action_status
-
-        # Init superclass.
-        super().__init__(expert_model.nS, expert_model.nA, np.infty, expert_model.reward_range)
-
 
     def reset(self):
         """
