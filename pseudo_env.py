@@ -147,9 +147,17 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-        safe = np.arange(0, self.nA)[
+        _safe_actions = self.safe_actions(state, lb_value)
+        return np.random.choice(_safe_actions)
+
+    def safe_actions(self, state, lb_value):
+        """
+        Returns a numpy array of safe actions.
+
+        """
+
+        return np.arange(0, self.nA)[
             self.Q_pes[state] >= lb_value]
-        return np.random.choice(safe)
 
     def copy(self):
         """Copy the opbject
