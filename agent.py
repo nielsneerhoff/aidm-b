@@ -69,13 +69,22 @@ class ModelBasedLearner:
 
         return T_low_s_a, T_high_s_a
 
-    def select_greedy_action(self, state):
+    def select_greedy_action(self, state, possibilities = None):
         """
         Returns a greedy action, based on the current state.
+        If possibilities is passed, selects an action from this set.
+
+        Make sure possibilities is non-empty, otherwise it will choose the 
+        greedy action by default.
 
         """
 
-        return np.argmax(self.Q[state])
+        if np.any(possibilities):
+            best_action = possibilities[
+                np.argmax(self.Q[state][possibilities])]
+        else:
+            best_action = np.argmax(self.Q[state])
+        return best_action
 
     def value_iteration(self):
         """
@@ -228,7 +237,7 @@ class MBIE_EB(ModelBasedLearner):
         return super().select_greedy_action(state)
 
 
-class Mediator(ModelBasedLearner):
+class Mediator(MBIE):
     """
     Represents the mediator between the expert and agent: the class that 
     selects the actions based on both models.
@@ -286,11 +295,17 @@ class Mediator(ModelBasedLearner):
 
         # Find what expert would do.
         best_action, best_value = self.expert_model.best_action_value(state)
+
         if self.select_action_status is 'expert_best_action':
             return best_action
 
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
+
+        safe_actions = self.merged_model.safe_actions(
+            state, (1 - self.rho) * merged_value)
+
+        safe_action = self.select_greedy_action(state, safe_actions)
 
         # If expert and merged action are unequal -> return merged action
         if merged_value > self.merged_model.Q_pes[state][best_action] and self.select_action_status is 'merged_best_action':
@@ -306,4 +321,5 @@ class Mediator(ModelBasedLearner):
 
         """
 
-        self.Q = self.merged_model.value_iteration()
+        self.merged_model.value_iteration()
+        super().value_iteration()

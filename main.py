@@ -53,8 +53,8 @@ mediator_expert_action_metrics = Metrics(mediator_expert_action, env, 'mediator_
 mediator_merged_action_metrics = Metrics(mediator_merged_action, env, 'mediator_merged')
 
 # Run.
-print(learn_online(env, mbie, mbie_metrics))
-print(learn_online(env, mbie_eb, mbie_eb_metrics))
+# print(learn_online(env, mbie, mbie_metrics))
+# print(learn_online(env, mbie_eb, mbie_eb_metrics))
 print(learn_online(env, mediator, mediator_metrics))
 print(learn_online(env, mediator_expert_action, mediator_expert_action_metrics))
 print(learn_online(env, mediator_merged_action, mediator_merged_action_metrics))
