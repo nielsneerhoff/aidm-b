@@ -27,6 +27,7 @@ class ModelBasedLearner:
         self.T = np.ones((nS, nA, nS)) / (nS)
         self.R = np.zeros((nS, nA))
 
+
     def reset(self):
         '''
         Reset the agent to the begin state for next run
@@ -42,6 +43,7 @@ class ModelBasedLearner:
         # Stores transition probability estimates and reward estimates.
         self.T = np.ones((self.nS, self.nA, self.nS)) / (self.nS)
         self.R = np.zeros((self.nS, self.nA))
+
 
     def process_experience(self, state, action, next_state, reward):
         """
@@ -312,14 +314,6 @@ class Mediator(MBIE):
         safe_action = self.select_greedy_action(state, safe_actions)
 
         return safe_action
-
-        # If expert and merged action are unequal -> return merged action
-        if merged_value > self.merged_model.Q_pes[state][best_action] and self.select_action_status is 'merged_best_action':
-        # if self.select_action_status is 'merged_best_action':
-            return merged_action
-
-        return self.merged_model.safe_action(
-            state, (1 - self.rho) * merged_value)
 
     def value_iteration(self):
         """

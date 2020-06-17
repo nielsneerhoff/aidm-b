@@ -23,7 +23,7 @@ def learn_online(env, agent, metrics):
             agent.value_iteration()
             state = new_state
             if i % 100 == 0:
-                print('Iteration', i, 'run', run, 'reward', metrics.cumulative_rewards[run, i], '\t', agent.max_policy(), '\n', agent.Q)
+                print('Iteration', i, 'run', run, 'reward', metrics.cumulative_rewards[run, i], '\t', agent.max_policy(), '\n', agent.Q_opt)
         metrics.calculate_sample_complexity(run)
     return agent.Q
 
