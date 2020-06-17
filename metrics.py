@@ -78,6 +78,8 @@ class Metrics:
         # Instantaneous Loss 
         self.instantaneous_loss = np.zeros((NO_RUNS, MAX_EPISODES))
 
+        self.cumulative_instantaneous_loss = np.zeros((NO_RUNS, MAX_EPISODES))
+
     def __str__(self):
         '''
         String representation of the object
@@ -173,6 +175,10 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
                 self.sample_complexity[run] += 1
 
             Q_old = Q_new
+
+        self.cumulative_instantaneous_loss[run, 0] = self.instantaneous_loss[run, 0]
+        for i in range(1, MAX_EPISODES):
+            self.cumulative_instantaneous_loss[run, i] = self.instantaneous_loss[run, i] + self.cumulative_instantaneous_loss[run, i - 1]
 
         
     ### ''' Private Initializer Methods ''' ###
@@ -352,7 +358,8 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
         # 'KL_divergence_R_sum' : ['episode', 'KL_div_R_sum'],
         'coverage_error_squared_T' : ['episode', 'cov_err_sq_T'],
         'coverage_error_squared_R' : ['episode', 'cov_err_sq_R'],
-        'instantaneous_loss' : ['episode', 'inst_loss']
+        'instantaneous_loss' : ['episode', 'inst_loss'],
+        'cumulative_instantaneous_loss' : ['episode', 'cum_inst_loss']
     }
 
     single_metrics = {
