@@ -5,6 +5,7 @@ from gym.envs.toy_text.discrete import DiscreteEnv
 ACTION0 = 0
 ACTION1 = 1
 ACTION2 = 2
+ACTION3 = 3
 
 class SimpleTaxi(DiscreteEnv):
     """
@@ -42,23 +43,34 @@ class SimpleTaxi(DiscreteEnv):
         t[0, ACTION1, 0] = 0.45
         t[0, ACTION2, 3] = 0.8
         t[0, ACTION2, 0] = 0.20
+        t[0, ACTION3, 4] = 1
 
 
         #State 1
         t[1, ACTION0, 0] = 1
         t[1, ACTION1, 0] = 1
         t[1, ACTION2, 0] = 1
+        t[1, ACTION3, 0] = 1
        
    
         #State 2
         t[2, ACTION0, 0] = 1
         t[2, ACTION1, 0] = 1
         t[2, ACTION2, 0] = 1
+        t[2, ACTION3, 0] = 1
 
         #State 3
         t[3, ACTION0, 0] = 1
         t[3, ACTION1, 0] = 1
         t[3, ACTION2, 0] = 1
+        t[3, ACTION3, 0] = 1
+
+        #State 4
+        t[4, ACTION0, 0] = 1
+        t[4, ACTION1, 0] = 1
+        t[4, ACTION2, 0] = 1
+        t[4, ACTION3, 0] = 1
+
 
         return t
 
@@ -72,11 +84,19 @@ class SimpleTaxi(DiscreteEnv):
         r[0, ACTION1, 0] = 0
         r[0, ACTION2, 3] = 0
         r[0, ACTION2, 0] = 0
+        r[0, ACTION3, 4] = 0
 
         #self-loops
         r[1, ACTION0, 0] = 100
         r[2, ACTION1, 0] = 100
         r[3, ACTION2, 0] = 100
+        #State 4
+        t[4, ACTION0, 0] = -150
+        t[4, ACTION1, 0] = -150
+        t[4, ACTION2, 0] = -150
+        t[4, ACTION3, 0] = -150
+
+        
      
         return r
 
