@@ -15,8 +15,8 @@ def learn_online(env, agent, metrics):
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
             action = agent.select_action(state)
-            # print(action)
-            new_state, reward, done, info = env.step(action)
+            new_state, reward, _, _ = env.step(action)
+            print(state, action, new_state)
             agent.process_experience(
                 state, action, new_state, reward)
             metrics.update_metrics(run, state, action, reward, i)

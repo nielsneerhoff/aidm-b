@@ -307,6 +307,8 @@ class Mediator(MBIE):
 
         safe_action = self.select_greedy_action(state, safe_actions)
 
+        return safe_action
+
         # If expert and merged action are unequal -> return merged action
         if merged_value > self.merged_model.Q_pes[state][best_action] and self.select_action_status is 'merged_best_action':
         # if self.select_action_status is 'merged_best_action':
