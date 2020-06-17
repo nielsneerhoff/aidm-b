@@ -48,10 +48,6 @@ class ModelBasedLearner:
         Update the transition probabilities and rewards based on the state, 
         action, next state and reward.
 
-        Returns a pseudo env as learned by agent. The pseudo env consists of
-        lower and upper bounds for the transition probabilities, calculated
-        using the epsilon-confidence measure on the current distribution.
-
         """
 
         # Only update model if within model size, see section 3 bullet point 7.
@@ -62,13 +58,6 @@ class ModelBasedLearner:
             # Adjust mean probability and reward estimate accordingly.
             self.T[state][action] = (self.n[state][action]) / ( np.sum(self.n[state][action]))
             self.R[state][action] = (self.R[state][action] * (np.sum(self.n[state][action]) - 1) + reward) / np.sum(self.n[state][action])
-
-        # Return high and low confidence probabilities on s, a transition.
-        epsilon_t = self.epsilon_t(state, action)
-        T_low_s_a = np.maximum(self.T[state][action] - epsilon_t, 0)
-        T_high_s_a = np.minimum(self.T[state][action] + epsilon_t, 1)
-
-        return T_low_s_a, T_high_s_a
 
     def select_greedy_action(self, state, possibilities = None):
         """
@@ -89,7 +78,11 @@ class ModelBasedLearner:
 
     def value_iteration(self):
         """
-        Perform value iteration on the current model.
+        Perform optimistic value iteration on the current model.
+        Follows the algorithm as discussed in
+
+        "An analysis of model-based interval estimation for MDP" 
+        by A. Strehl.
 
         """
 
@@ -247,7 +240,7 @@ class Mediator(MBIE):
 
     def __init__(self, expert_model, rho, select_action_status = ''):
         """
-        Sets the properties of this mediator.
+        Sets the properties of the mediator.
 
         """
 
@@ -287,11 +280,15 @@ class Mediator(MBIE):
         """
 
         # Process experience.
-        T_low_s_a_, T_high_s_a_ = super().process_experience(
-            state, action, next_state, reward)
+        super().process_experience(state, action, next_state, reward)
+
+        # Return high and low confidence probabilities on s, a transition.
+        epsilon_t = self.epsilon_t(state, action)
+        T_low_s_a = np.maximum(self.T[state][action] - epsilon_t, 0)
+        T_high_s_a = np.minimum(self.T[state][action] + epsilon_t, 1)
 
         # Merge resulting model with expert model.
-        self.merged_model.merge(state, action, T_low_s_a_, T_high_s_a_)
+        self.merged_model.merge(state, action, T_low_s_a, T_high_s_a)
 
     def select_action(self, state):
         """
@@ -326,9 +323,13 @@ class Mediator(MBIE):
 
     def value_iteration(self):
         """
-        Performs pessimistic value iteration on the merged model.
+        Performs 
+        -   optimistic vi on agent model (MBIE).
+        -   pessimistic vi on merged model (BPMDP).
+
+        Assigns Q-values to self arrays.
 
         """
 
-        self.merged_model.value_iteration()
-        super().value_iteration()
+        self.Q_pes = self.merged_model.value_iteration()
+        self.Q_opt = super().value_iteration()
