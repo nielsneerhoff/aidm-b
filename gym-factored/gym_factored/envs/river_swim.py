@@ -38,9 +38,9 @@ class RiverSwimEnv(DiscreteEnv):
                 for new_state in range(ns):
                     transition_prob = t[s, a, new_state]
                     if transition_prob > 0:
-                        if s == ns -1 & new_state == ns - 1:
+                        if s == ns - 1 & new_state == ns - 1:
                             reward = 10000
-                        elif s == 0 & new_state == 0:
+                        elif s == 0 & new_state == 0 and a == 0:
                             reward = 5
                         else:
                             reward = 0

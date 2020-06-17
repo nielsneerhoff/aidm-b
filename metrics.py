@@ -278,7 +278,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
 
         '''
         self.coverage_error_squared_T[run, step] = np.sum(np.square(self.agent.T - self.env_T))
-        self.coverage_error_squared_R[run, step] = np.sum(np.square(self.agent.R - self.env_mean_reward))
+        # self.coverage_error_squared_R[run, step] = np.sum(np.square(self.agent.R - self.env_mean_reward))
 
 
     def __update_KL_divergence(self, run, step, state, action):

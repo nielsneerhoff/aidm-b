@@ -65,7 +65,7 @@ class ModelBasedLearner:
 
         """
 
-        if np.any(possibilities):
+        if len(possibilities) > 0:
             best_action = possibilities[
                 np.argmax(self.Q_opt[state][possibilities])]
         else:
@@ -117,8 +117,8 @@ class MBIE(ModelBasedLearner):
 
     """
 
-    def __init__(self, nS, nA, m, R_range):
-        super().__init__(nS, nA, m, R_range)
+    def __init__(self, nS, nA, m, R):
+        super().__init__(nS, nA, m, R)
 
     def q_value(self, state, action):
         """
@@ -182,9 +182,9 @@ class MBIE_EB(ModelBasedLearner):
 
     """
 
-    def __init__(self, nS, nA, m, beta, R_range):
+    def __init__(self, nS, nA, m, beta, R):
         self.beta = beta
-        super(MBIE_EB, self).__init__(nS, nA, m, R_range)
+        super(MBIE_EB, self).__init__(nS, nA, m, R)
 
     def q_value(self, state, action):
         """
@@ -227,10 +227,10 @@ class Mediator(MBIE):
         """
 
         # Copy basic env vars.
-        nS, nA, reward_range = expert_model.nS, expert_model.nA, expert_model.reward_range
+        nS, nA, R = expert_model.nS, expert_model.nA, expert_model.R
 
         # Init superclass.
-        super().__init__(nS, nA, np.infty, reward_range)
+        super().__init__(nS, nA, np.infty, R)
 
         # Init pessimistic Q-values.
         self.Q_pes = np.zeros((nS, nA))
@@ -254,7 +254,7 @@ class Mediator(MBIE):
         self.merged_model = self.expert_model.copy()
 
 
-    def process_experience(self, state, action, next_state, reward):
+    def process_experience(self, state, action, next_state):
         """
         Processes the experiences of the agent: updates the merged model
         transition probabilities if the result is tighter.
@@ -262,7 +262,7 @@ class Mediator(MBIE):
         """
 
         # Process experience.
-        super().process_experience(state, action, next_state, reward)
+        super().process_experience(state, action, next_state)
 
         # Return high and low confidence probabilities on s, a transition.
         epsilon_t = self.epsilon_t(state, action)
