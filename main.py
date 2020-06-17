@@ -15,11 +15,11 @@ def learn_online(env, agent, metrics):
         metrics.start_runtime(run)
         for i in range(MAX_EPISODES):
             action = agent.select_action(state)
-            new_state, _, _, _ = env.step(action)
+            new_state, reward, _, _ = env.step(action)
             print(state, action, new_state)
             agent.process_experience(
                 state, action, new_state)
-            metrics.update_metrics(run, state, action, 0, i)
+            metrics.update_metrics(run, state, action, reward, i)
             agent.value_iteration()
             state = new_state
             if i % 100 == 0:
@@ -42,22 +42,23 @@ expert_model = HighLowModel.from_env(env, [[0,0,1,(0.6,0.8)],[0,1,2,(0.7,0.9)], 
 print(expert_model)
 
 # # Initialize agents.
-# mbie = MBIE(env.nS, env.nA, m, R)
-# mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, env.reward_range)
-mediator = Mediator(expert_model, rho = 0.05)
-# mediator_no_exploration = Mediator(expert_model, rho = 0.10, select_action_status = 'mediator_no_exploration')
+mbie = MBIE(env.nS, env.nA, m, R)
+mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, R)
+mediator = Mediator(expert_model, rho = 0.02)
+mediator_no_exploration = Mediator(
+    expert_model, rho = 0.10, select_action_status = 'mediator_no_exploration')
 
 # Initialize metrics for counting.
-# mbie_metrics = Metrics(mbie, env, 'mbie')
-# mbie_eb_metrics = Metrics(mbie_eb, env, 'mbie_eb')
+mbie_metrics = Metrics(mbie, env, 'mbie')
+mbie_eb_metrics = Metrics(mbie_eb, env, 'mbie_eb')
 mediator_metrics = Metrics(mediator, env, 'mediator')
-# mediator_no_exploration_metrics = Metrics(mediator_no_exploration, env, 'mediator_no_exploration')
+mediator_no_exploration_metrics = Metrics(mediator_no_exploration, env, 'mediator_no_exploration')
 
 # Run.
-# print(learn_online(env, mbie, mbie_metrics))
-# print(learn_online(env, mbie_eb, mbie_eb_metrics))
+print(learn_online(env, mbie, mbie_metrics))
+print(learn_online(env, mbie_eb, mbie_eb_metrics))
 print(learn_online(env, mediator, mediator_metrics))
-# print(learn_online(env, mediator_no_exploration, mediator_no_exploration_metrics))
+print(learn_online(env, mediator_no_exploration, mediator_no_exploration_metrics))
 
 metrics_to_print = [
     mbie_metrics, 
