@@ -2,7 +2,7 @@ import numpy as np
 
 MAX_ITERATIONS = 1000000
 MAX_EPISODES = 5000
-NO_RUNS = 1
+NO_RUNS = 5
 GAMMA = 0.95
 DELTA = 0.01
 

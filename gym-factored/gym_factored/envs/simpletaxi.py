@@ -13,7 +13,7 @@ class SimpleTaxi(DiscreteEnv):
 
     """
     def __init__(self):
-        self.reward_range = 0, 100
+        self.reward_range = -150, 100
         ns = 5
         na = 4 
         terminal_states = np.zeros(ns, dtype=bool)
@@ -39,8 +39,8 @@ class SimpleTaxi(DiscreteEnv):
         #State 0
         t[0, ACTION0, 1] = 0.75
         t[0, ACTION0, 0] = 0.25
-        t[0, ACTION1, 2] = 0.55
-        t[0, ACTION1, 0] = 0.45
+        t[0, ACTION1, 2] = 0.70
+        t[0, ACTION1, 0] = 0.30
         t[0, ACTION2, 3] = 0.8
         t[0, ACTION2, 0] = 0.20
         t[0, ACTION3, 4] = 1
