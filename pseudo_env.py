@@ -21,7 +21,7 @@ class PseudoEnv(DiscreteEnv):
 
         # Compute q-values for current pseudo-env.
         self.improved = True
-        self.Q_pes, self.Q_opt, self.Q_mean = self.value_iteration()
+        self.Q_pes, self.Q_opt = self.value_iteration()
 
     def interval_sizes(self, state, action):
         """
@@ -83,14 +83,7 @@ class PseudoEnv(DiscreteEnv):
             if i > 1000 and done:
                 break
 
-        # Init to zero and pessimistic value iterate.
-        self.Q_mean = np.zeros((self.nS, self.nA))
-        # for i in range(MAX_ITERATIONS):
-        #     self.Q_mean, done = self.mean_value_iterate()
-        #     if i > 1000 and done:
-        #         break
-
-        return self.Q_pes, self.Q_opt, self.Q_mean
+        return self.Q_pes, self.Q_opt
 
     def pessimistic_value_iterate(self):
         """
@@ -129,28 +122,6 @@ class PseudoEnv(DiscreteEnv):
             permutation, Q_opt_state_values)
 
         return Q_opt_new, np.abs(np.sum(Q_opt_new) - np.sum(self.Q_opt)) < DELTA
-
-    def mean_value_iterate(self):
-        """
-        Performs one iteration of mean value updates. Returns new value 
-        intervals for each state, and whether the update difference was 
-        smaller than delta.
-
-        """
-
-        # Find the current values (maximum action at states).
-        Q_mean_new = np.array(self.Q_mean)
-        Q_mean_state_values = np.max(Q_mean_new, axis = 1)
-
-        # Sort on state ub's in decreasing order.
-        mean_T = self.T_high - self.T_low / 2
-
-        q_values = Q_mean_state_values
-        # Update Q-values using mean interval MDP.
-        for p in range(self.nS):
-            Q_mean_new[p] = self.R[p] + GAMMA * np.dot(mean_T[p], q_values.T)
-
-        return Q_mean_new, np.abs(np.sum(Q_mean_new) - np.sum(self.Q_mean)) < DELTA
 
     def value_iterate(self, permutation, q_values):
         """
@@ -237,6 +208,20 @@ class PseudoEnv(DiscreteEnv):
         output += rewards
         return output
 
+    def determined_state_actions(self, state):
+        """
+        Returns a dict of determined state actions: for each state in the dict,
+        the pessimistic policy aligns with the optimistic policy.
+
+        """
+
+        # TODO: Tie breaking.
+        pessimistic_actions = np.argmax(self.Q_pes, axis = 1)
+        optimistic_actions = np.argmax(self.Q_opt, axis = 1)
+        determined = pessimistic_actions == optimistic_actions
+        determined_actions = pessimistic_actions[determined]
+        determined_states = np.arange(0, self.nS)[determined]
+        return dict(zip(determined_states, determined_actions))
 
 class HighLowModel(PseudoEnv):
     """

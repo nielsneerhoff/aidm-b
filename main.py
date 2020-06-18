@@ -36,6 +36,7 @@ R = expected_rewards(env) # Assume we have perfect knowledge of R.
 # Initialize expert model. See pydoc for .from_env function.
 # expert_model = HighLowModel.from_env(env, [[0, 0, 1, (0.6, 0.8)],[0, 1, 2, (0.7, 0.9)], [0, 1, 0, (0.1, 0.3)],[0, 2, 3, (0.5, 0.8)]])
 expert_model = OffsetModel.from_env(env, 0.2)
+determined_actions = expert_model.determined_state_actions(2)
 print(expert_model)
 
 # # Initialize agents.
