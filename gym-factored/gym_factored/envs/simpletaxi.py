@@ -42,7 +42,7 @@ class SimpleTaxi(DiscreteEnv):
         t[0, ACTION1, 2] = 0.70
         t[0, ACTION1, 0] = 0.30
         t[0, ACTION2, 3] = 0.8
-        t[0, ACTION2, 0] = 0.20
+        t[0, ACTION2, 0] = 0.2
         t[0, ACTION3, 4] = 1
 
 
@@ -87,17 +87,16 @@ class SimpleTaxi(DiscreteEnv):
         r[0, ACTION3, 4] = 0
 
         #self-loops
-        r[1, ACTION0, 0] = 105
+        r[1, ACTION0, 0] = 50
         r[2, ACTION1, 0] = 100
-        r[3, ACTION2, 0] = 105
+        r[3, ACTION2, 0] = 150
+
         #State 4
         r[4, ACTION0, 0] = -150
         r[4, ACTION1, 0] = -150
         r[4, ACTION2, 0] = -150
         r[4, ACTION3, 0] = -150
 
-        
-     
         return r
 
     def render(self, mode='human'):

@@ -21,7 +21,7 @@ class PseudoEnv(DiscreteEnv):
 
         # Compute q-values for current pseudo-env.
         self.improved = True
-        self.Q_pes = self.value_iteration()
+        self.Q_pes, self.Q_opt, self.Q_mean = self.value_iteration()
 
     def interval_sizes(self, state, action):
         """
@@ -65,30 +65,38 @@ class PseudoEnv(DiscreteEnv):
 
         """
 
-        if self.improved:
+        # Only value iterate if the bounds have tightened.
+        if not self.improved:
+            return
 
-            # Init to zero.
-            self.Q_pes = np.zeros((self.nS, self.nA))
+        # Init to zero and pessimistic value iterate.
+        self.Q_pes = np.zeros((self.nS, self.nA))
+        for i in range(MAX_ITERATIONS):
+            self.Q_pes, done = self.pessimistic_value_iterate()
+            if i > 1000 and done:
+                break
 
-            for i in range(MAX_ITERATIONS):
-                # Find the current values (maximum action at states).
-                Q_pes = np.array(self.Q_pes)
-                Q_pes_state_values = np.max(Q_pes, axis = 1)
+        # Init to zero and pessimistic value iterate.
+        self.Q_opt = np.zeros((self.nS, self.nA))
+        for i in range(MAX_ITERATIONS):
+            self.Q_opt, done = self.optimistic_value_iterate()
+            if i > 1000 and done:
+                break
 
-                # Sort on state lb's in increasing order.
-                permutation = np.argsort(Q_pes_state_values)
-                self.Q_pes = self.value_iterate(
-                    permutation, Q_pes_state_values)
+        # Init to zero and pessimistic value iterate.
+        self.Q_mean = np.zeros((self.nS, self.nA))
+        # for i in range(MAX_ITERATIONS):
+        #     self.Q_mean, done = self.mean_value_iterate()
+        #     if i > 1000 and done:
+        #         break
 
-                # If converged, break.
-                if i > 1000 and np.abs(np.sum(Q_pes) - np.sum(self.Q_pes)) < DELTA:
-                    break
-
-        return self.Q_pes
+        return self.Q_pes, self.Q_opt, self.Q_mean
 
     def pessimistic_value_iterate(self):
         """
-        Performs one iteration of pessimistic value updates. Returns new value intervals for each state, and whether the update difference was smaller than delta.
+        Performs one iteration of pessimistic value updates. Returns new value 
+        intervals for each state, and whether the update difference was 
+        smaller than delta.
 
         """
 
@@ -102,6 +110,47 @@ class PseudoEnv(DiscreteEnv):
             permutation, Q_pes_state_values)
 
         return Q_pes_new, np.abs(np.sum(Q_pes_new) - np.sum(self.Q_pes)) < DELTA
+
+    def optimistic_value_iterate(self):
+        """
+        Performs one iteration of optimistic value updates. Returns new value 
+        intervals for each state, and whether the update difference was 
+        smaller than delta.
+
+        """
+
+        # Find the current values (maximum action at states).
+        Q_opt_new = np.array(self.Q_opt)
+        Q_opt_state_values = np.max(Q_opt_new, axis = 1)
+
+        # Sort on state ub's in decreasing order.
+        permutation = np.argsort(Q_opt_state_values)[::-1][:self.nS]
+        Q_opt_new = self.value_iterate(
+            permutation, Q_opt_state_values)
+
+        return Q_opt_new, np.abs(np.sum(Q_opt_new) - np.sum(self.Q_opt)) < DELTA
+
+    def mean_value_iterate(self):
+        """
+        Performs one iteration of mean value updates. Returns new value 
+        intervals for each state, and whether the update difference was 
+        smaller than delta.
+
+        """
+
+        # Find the current values (maximum action at states).
+        Q_mean_new = np.array(self.Q_mean)
+        Q_mean_state_values = np.max(Q_mean_new, axis = 1)
+
+        # Sort on state ub's in decreasing order.
+        mean_T = self.T_high - self.T_low / 2
+
+        q_values = Q_mean_state_values
+        # Update Q-values using mean interval MDP.
+        for p in range(self.nS):
+            Q_mean_new[p] = self.R[p] + GAMMA * np.dot(mean_T[p], q_values.T)
+
+        return Q_mean_new, np.abs(np.sum(Q_mean_new) - np.sum(self.Q_mean)) < DELTA
 
     def value_iterate(self, permutation, q_values):
         """

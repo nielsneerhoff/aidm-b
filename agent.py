@@ -283,22 +283,21 @@ class Mediator(MBIE):
         # Find what expert would do.
         best_action, best_value = self.expert_model.best_action_value(state)
 
-        if self.select_action_status is not 'only-expert-actions':
-            return best_action
-
         # Find what we would do based on merged model.
         merged_action, merged_value = self.merged_model.best_action_value(state)
 
-        if self.select_action_status is 'only-merged-actions':
-            return merged_action
-
-        if self.select_action_status is 'mediator':
-
+        if merged_value > self.merged_model.Q_pes[state][best_action]:
             safe_actions = self.merged_model.safe_actions(
-                state, (1 - self.rho) * merged_value)
+                state, merged_value - self.rho * best_value)
             safe_action = self.select_greedy_action(state, safe_actions)
-
             return safe_action
+
+        safe_actions = self.merged_model.safe_actions(
+            state, (1 - self.rho) * best_value)
+
+        safe_action = self.select_greedy_action(state, safe_actions)
+
+        return safe_action
 
     def value_iteration(self):
         """
