@@ -92,3 +92,10 @@ register(
     entry_point='gym_factored.envs.simpletaxi:SimpleTaxi',
     max_episode_steps=1000
 )
+
+register(
+    id='toy-taxi-v1',
+    entry_point='gym_factored.envs.taxi_fuel:TaxiFuelEnv',
+    reward_threshold=8, # optimum = 8.46
+    max_episode_steps=200,
+)

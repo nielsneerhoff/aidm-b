@@ -21,7 +21,7 @@ class PseudoEnv(DiscreteEnv):
 
         # Compute q-values for current pseudo-env.
         self.improved = True
-        self.Q_pes, self.Q_opt = self.value_iteration()
+        # self.Q_pes, self.Q_opt = self.value_iteration()
 
     def interval_sizes(self, state, action):
         """
@@ -243,7 +243,7 @@ class HighLowModel(PseudoEnv):
 
         """
 
-        T = env.get_transition_function(env.nA, env.nS)
+        T = get_transition_function(env)
         T_low = T.copy()
         T_high = T.copy()
         R = expected_rewards(env)
@@ -290,7 +290,7 @@ class OffsetModel(PseudoEnv):
 
         """
 
-        T = env.get_transition_function(env.nA, env.nS)
+        T = get_transition_function(env)
         R = expected_rewards(env)
         return OffsetModel(T, offset, R)
 
@@ -308,3 +308,15 @@ def expected_rewards(env):
                 for prob, next_state, reward, _ in [options]:
                     rewards[state, action] += prob * reward
     return rewards
+
+def get_transition_function(env):
+    '''
+    Recreate transition function.
+
+    '''
+    T = np.zeros((env.nS, env.nA, env.nS))
+    for state, actions in env.P.items():
+        for action, probs in actions.items():
+            for (prob, new_state, reward, _) in probs:
+                T[state, action, new_state] = prob
+    return T

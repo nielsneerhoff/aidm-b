@@ -23,7 +23,9 @@ class BridgeEnv(gym.Env):
         self.max_swimming_len = max_swimming_len
 
         self.action_space = spaces.Discrete(3)
+        self.nA = self.action_space.n
         self.observation_space = spaces.Discrete(bridge_len * max_swimming_len)
+        self.nS = self.observation_space.n
         self.actions_probs = {
             FORWARD: [.99, 0., .01],
             BACKWARD: [0, 1, 0],

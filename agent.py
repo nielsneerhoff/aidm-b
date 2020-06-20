@@ -30,9 +30,6 @@ class ModelBasedLearner:
 
         '''
 
-        # Stores current state value estimates.
-        self.Q_opt = np.zeros((self.nS, self.nA))
-
         # Stores # times s, a , s' was observed.
         self.n = np.zeros((self.nS, self.nA, self.nS))
 
@@ -110,7 +107,7 @@ class ModelBasedLearner:
 
         if np.sum(self.n[state][action]) > 0:
             return np.sqrt((2 * np.log(np.power(2, self.nS) - 2) - np.log(DELTA_T)) / np.sum(self.n[state][action]))
-        return 1
+        return 2
 
 class MBIE(ModelBasedLearner):
     """
@@ -221,7 +218,7 @@ class Mediator(MBIE):
 
     """
 
-    def __init__(self, expert_model, rho, select_action_status = ''):
+    def __init__(self, expert_model, rho, safe_action_mode = 'random'):
         """
         Sets the properties of the mediator.
 
@@ -240,6 +237,9 @@ class Mediator(MBIE):
 
         # Agent follows 1 - rho opt. pessimistic expert policy.
         self.rho = rho
+
+        # Select safe action mode: if random take random actions within bound.
+        self.safe_action_mode = safe_action_mode
 
     def optimistic_q_value(self, state, action):
         """
@@ -271,13 +271,34 @@ class Mediator(MBIE):
         determined_action = self.determined(state)
         if determined_action is not None:
             return determined_action
-        else:
-            
+        return self.safe_action(state)
+
+    def safe_action(self, state):
+        """
+        Returns a safe action.
+
+        """
+
+        pessimistic_q = self.Q_pes[state].max()
+        safe_actions = self.Q_pes[state] > (1 - self.rho) * pessimistic_q
+
+        # Return a random safe action within bounds.
+        if self.safe_action_mode == 'random':
+            action = np.random.choice(np.arange(0, self.nA)[safe_actions])
+
+        # Return a max-optimistic action within bounds.
+        elif self.safe_action_mode == 'max-opt':
+            best_optimistic = self.Q_opt[state][safe_actions].max()
+            best_optimistic_actions = self.Q_opt[state] == \
+                self.Q_opt[state][safe_actions].max()
+            action =  np.random.choice(np.arange(0, self.nA)[best_optimistic_actions])
+
+        return action
 
     def determined(self, state):
         """
         Returns an action that is optimal in both pessimistic and optimistic Q,
-        if it exists.
+        if it exists. Otherwise returns None.
 
         """
 
@@ -288,19 +309,10 @@ class Mediator(MBIE):
             self.Q_opt[state] == self.Q_opt[state].max()])
 
         determined = pessimistic_actions.intersection(optimistic_actions)
-        random_action = np.random.choice(np.array(determined))
-        return random_action
+        if determined:
+            return np.random.choice(np.array(list(determined)))
 
     def value_iteration(self):
-        """
-        Performs 
-        -   optimistic vi on agent model (MBIE).
-        -   pessimistic vi on merged model (BPMDP).
-
-        Returns Q-values.
-
-        """
-
         Q_opt = np.zeros((self.nS, self.nA))
         Q_pes = np.zeros((self.nS, self.nA))
 
@@ -310,7 +322,7 @@ class Mediator(MBIE):
                 for action in range(self.nA):
                     Q_opt[state][action] = self.optimistic_q_value(
                         state, action)
-            if i > 1000 and np.abs(np.sum(self.Q_opt) - np.sum(Q_opt)) < DELTA:
+            if i > 1 and np.abs(np.sum(self.Q_opt) - np.sum(Q_opt)) < DELTA:
                 break
             self.Q_opt = np.array(Q_opt)
 
@@ -320,7 +332,7 @@ class Mediator(MBIE):
                 for action in range(self.nA):
                     Q_pes[state][action] = self.pessimistic_q_value(
                         state, action)
-            if i > 1000 and np.abs(np.sum(self.Q_pes) - np.sum(Q_pes)) < DELTA:
+            if i > 1 and np.abs(np.sum(self.Q_pes) - np.sum(Q_pes)) < DELTA:
                 break
             self.Q_pes = np.array(Q_pes)
 
@@ -348,7 +360,6 @@ class Mediator(MBIE):
 
         # Keep track of which states have removable probability.
         amount_removable = T - T_low
-        # amount_removable[desired_next_state] = 0
 
         # Increment desired next state as most as possible within bounds.
         epsilon_t = self.epsilon_t(state, action)
@@ -387,7 +398,6 @@ class Mediator(MBIE):
 
         # Keep track of which states have removable probability.
         amount_removable = T - T_low
-        # amount_removable[desired_next_state] = 0
 
         # Increment desired next state as most as possible within bounds.
         epsilon_t = self.epsilon_t(state, action)
