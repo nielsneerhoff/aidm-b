@@ -227,51 +227,39 @@ class Mediator(MBIE):
 
         """
 
-        # Copy basic env vars.
+        # Copy basic env vars and init superclass.
         nS, nA, R = expert_model.nS, expert_model.nA, expert_model.R
-
-        # Init superclass.
         super().__init__(nS, nA, np.infty, R)
 
-        # Init pessimistic Q-values.
-        self.Q_pes = np.zeros((nS, nA))
-
-        # Init the two models.
         self.expert_model = expert_model
-        self.merged_model = self.expert_model.copy()
+
+        # Init pessimistic Q-values.
+        self.Q_pes = np.zeros((self.nS, self.nA))
+        self.Q_opt = np.zeros((self.nS, self.nA))
+        self.Q_pes, self.Q_opt = self.value_iteration()
 
         # Agent follows 1 - rho opt. pessimistic expert policy.
         self.rho = rho
 
-        # Stores action-selection profile.
-        self.select_action_status = select_action_status
-
-    def reset(self):
+    def optimistic_q_value(self, state, action):
         """
-        Overload the reset 
-
-        """
-        super().reset()
-        self.merged_model = self.expert_model.copy()
-
-
-    def process_experience(self, state, action, next_state):
-        """
-        Processes the experiences of the agent: updates the merged model
-        transition probabilities if the result is tighter.
+        Returns the optmistic Q estimate of the current state action.
 
         """
 
-        # Process experience.
-        super().process_experience(state, action, next_state)
+        T_max = self.upper_transition_distribution(state, action)
+        R = self.R[state][action]
+        return R + GAMMA * np.dot(T_max, np.max(self.Q_opt, axis = 1))
 
-        # Return high and low confidence probabilities on s, a transition.
-        epsilon_t = self.epsilon_t(state, action)
-        T_low_s_a = np.maximum(self.T[state][action] - epsilon_t, 0)
-        T_high_s_a = np.minimum(self.T[state][action] + epsilon_t, 1)
+    def pessimistic_q_value(self, state, action):
+        """
+        Returns the pessimistic Q estimate of the current state action.
 
-        # Merge resulting model with expert model.
-        self.merged_model.merge(state, action, T_low_s_a, T_high_s_a)
+        """
+
+        T_min = self.lower_transition_distribution(state, action)
+        R = self.R[state][action]
+        return R + GAMMA * np.dot(T_min, np.max(self.Q_pes, axis = 1))
 
     def select_action(self, state):
         """
@@ -280,24 +268,28 @@ class Mediator(MBIE):
 
         """
 
-        # Find what expert would do.
-        best_action, best_value = self.expert_model.best_action_value(state)
+        determined_action = self.determined(state)
+        if determined_action is not None:
+            return determined_action
+        else:
+            
 
-        # Find what we would do based on merged model.
-        merged_action, merged_value = self.merged_model.best_action_value(state)
+    def determined(self, state):
+        """
+        Returns an action that is optimal in both pessimistic and optimistic Q,
+        if it exists.
 
-        if merged_value > self.merged_model.Q_pes[state][best_action]:
-            safe_actions = self.merged_model.safe_actions(
-                state, merged_value - self.rho * best_value)
-            safe_action = self.select_greedy_action(state, safe_actions)
-            return safe_action
+        """
 
-        safe_actions = self.merged_model.safe_actions(
-            state, (1 - self.rho) * best_value)
+        actions = np.arange(0, self.nA)
+        pessimistic_actions = set(actions[
+            self.Q_pes[state] == self.Q_pes[state].max()])
+        optimistic_actions = set(actions[
+            self.Q_opt[state] == self.Q_opt[state].max()])
 
-        safe_action = self.select_greedy_action(state, safe_actions)
-
-        return safe_action
+        determined = pessimistic_actions.intersection(optimistic_actions)
+        random_action = np.random.choice(np.array(determined))
+        return random_action
 
     def value_iteration(self):
         """
@@ -305,9 +297,109 @@ class Mediator(MBIE):
         -   optimistic vi on agent model (MBIE).
         -   pessimistic vi on merged model (BPMDP).
 
-        Assigns Q-values to self arrays.
+        Returns Q-values.
 
         """
 
-        self.Q_pes = self.merged_model.value_iteration()
-        self.Q_opt = super().value_iteration()
+        Q_opt = np.zeros((self.nS, self.nA))
+        Q_pes = np.zeros((self.nS, self.nA))
+
+        # Optimistic value iteration.
+        for i in range(MAX_ITERATIONS):
+            for state in range(self.nS):
+                for action in range(self.nA):
+                    Q_opt[state][action] = self.optimistic_q_value(
+                        state, action)
+            if i > 1000 and np.abs(np.sum(self.Q_opt) - np.sum(Q_opt)) < DELTA:
+                break
+            self.Q_opt = np.array(Q_opt)
+
+        # Pessimistic value iteration.
+        for i in range(MAX_ITERATIONS):
+            for state in range(self.nS):
+                for action in range(self.nA):
+                    Q_pes[state][action] = self.pessimistic_q_value(
+                        state, action)
+            if i > 1000 and np.abs(np.sum(self.Q_pes) - np.sum(Q_pes)) < DELTA:
+                break
+            self.Q_pes = np.array(Q_pes)
+
+        return self.Q_pes, self.Q_opt
+
+    def upper_transition_distribution(self, state, action):
+        """
+        Returns a probability distribution 
+        -   within 1 - delta_t of the mean sample distribution 
+        -   within the expert bounds
+        that yields the highest expected value for the
+        current (state, action) pair.
+
+        """
+
+        T_mean = np.array(self.T[state][action])
+        T_high = self.expert_model.T_high[state][action]
+        T_low = self.expert_model.T_low[state][action]
+        T = T_mean
+        next_states = np.argsort(np.max(self.Q_opt, axis = 1))
+        desired_next_state = next_states[-1]
+
+        # Clip all probabilities to fit expert lower bounds.
+        T = np.maximum(T_mean, T_low)
+
+        # Keep track of which states have removable probability.
+        amount_removable = T - T_low
+        # amount_removable[desired_next_state] = 0
+
+        # Increment desired next state as most as possible within bounds.
+        epsilon_t = self.epsilon_t(state, action)
+        T[desired_next_state] = min(
+            T_mean[desired_next_state] + epsilon_t / 2, # Within CI.
+            T_high[desired_next_state])                 # Within expert bounds.
+
+        next_index = 0
+        while np.sum(T) > 1:
+            min_next_state = next_states[next_index]
+            to_remove = min(
+                amount_removable[min_next_state], np.sum(T) - 1)
+            T[min_next_state] -= to_remove
+            next_index += 1
+        return T
+
+    def lower_transition_distribution(self, state, action):
+        """
+        Returns a probability distribution 
+        -   within 1 - delta_t of the mean sample distribution 
+        -   within the expert bounds
+        that yields the lowest expected value for the
+        current (state, action) pair.
+
+        """
+
+        T_mean = np.array(self.T[state][action])
+        T_high = self.expert_model.T_high[state][action]
+        T_low = self.expert_model.T_low[state][action]
+        T = T_mean
+        next_states = np.argsort(np.max(self.Q_pes, axis = 1))[::-1][:self.nS]
+        desired_next_state = next_states[-1]
+
+        # Clip all probabilities to fit expert lower bounds.
+        T = np.maximum(T_mean, T_low)
+
+        # Keep track of which states have removable probability.
+        amount_removable = T - T_low
+        # amount_removable[desired_next_state] = 0
+
+        # Increment desired next state as most as possible within bounds.
+        epsilon_t = self.epsilon_t(state, action)
+        T[desired_next_state] = min(
+            T_mean[desired_next_state] + epsilon_t / 2, # Within CI.
+            T_high[desired_next_state])                 # Within expert bounds.
+
+        next_index = 0
+        while np.sum(T) > 1:
+            min_next_state = next_states[next_index]
+            to_remove = min(
+                amount_removable[min_next_state], np.sum(T) - 1)
+            T[min_next_state] -= to_remove
+            next_index += 1
+        return T

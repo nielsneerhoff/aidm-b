@@ -208,7 +208,7 @@ class PseudoEnv(DiscreteEnv):
         output += rewards
         return output
 
-    def determined_state_actions(self, state):
+    def determined_state_actions(self):
         """
         Returns a dict of determined state actions: for each state in the dict,
         the pessimistic policy aligns with the optimistic policy.
