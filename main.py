@@ -27,7 +27,7 @@ def learn_online(env, agent, metrics):
     return agent.Q_opt
 
 # Initialize problem env.
-env = gym.make("gym_factored:bridge-v0")
+env = gym.make("gym_factored:toy-taxi-v1")
 m = MAX_EPISODES # Model size could be infinite.
 beta = BETA(env.reward_range, env.nS, env.nA, m)
 R = expected_rewards(env) # Assume we have perfect knowledge of R.
@@ -38,8 +38,8 @@ expert_model = OffsetModel.from_env(env, 0.2)
 # # Initialize agents.
 # mbie = MBIE(env.nS, env.nA, m, R)
 # mbie_metrics = Metrics(mbie, env, 'mbie')
-# mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, R)
-# mbie_eb_metrics = Metrics(mbie_eb, env, 'mbie_eb')
+mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, R)
+mbie_eb_metrics = Metrics(mbie_eb, env, 'mbie_eb')
 
 # Initialize expert.
 rho = 0.3

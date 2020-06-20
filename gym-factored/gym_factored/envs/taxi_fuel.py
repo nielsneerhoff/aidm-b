@@ -10,7 +10,7 @@ import numpy as np
 MAPS = {
     "1x3": [
         "+-----+",
-        "|B:R:G|",
+        "|R: :Y|",
         "+-----+",
     ],
     "5x5": [
@@ -86,6 +86,7 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
     There is a reward of -1 for each action and an additional reward of +20 for delivering the passenger.
     There is a reward of -10 for executing actions "pickup", "dropoff" or refuel illegally.
 
+
     Rendering:
     - blue: passenger
     - magenta: destination
@@ -100,7 +101,8 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
         assert map_name in MAPS.keys(), "invalid map_name.\nValid names: {}".format(", ".join(MAPS.keys()))
         self.desc = np.asarray(MAPS[map_name], dtype='c')
 
-        self.locs = locs = [(0, 0), (0, 1), (0, 2)]
+        self.locs = locs = [(0, 0), (0, 2)]
+        self.nP = nP = len(locs)
         self.fuel_capacity = fuel_capacity
         self.fuel_location = (0, 1)
 
@@ -108,13 +110,21 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
         self.nR, self.nC = nR, nC = int(nR), int(nC)
         min_starting_fuel = 2 + (nR - 3) + (nC - 3)
 
-        nS = nR * nC * (len(locs) + 1) * len(locs) * fuel_capacity
+
+        nS = nR * nC * (nP + 1) * nP * fuel_capacity
         isd = np.zeros(nS)
-        nA = 7
+        nA = len([
+            'move east',
+            'move west',
+            'pickup passenger',
+            'dropoff passenger',
+            'refuel'
+        ])
+        
         P = {s: {a: [] for a in range(nA)} for s in range(nS)}
         for state in range(nS):
             row, col, pass_idx, dest_idx, fuel = self.decode(state)
-            if pass_idx < 3 and pass_idx != dest_idx and fuel >= min_starting_fuel:
+            if pass_idx < nP and pass_idx != dest_idx and fuel >= min_starting_fuel:
                 isd[state] += 1
             for a in range(nA):
                 new_row, new_col, new_pass_idx, new_fuel = row, col, pass_idx, fuel
@@ -123,29 +133,25 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
                 taxiloc = (row, col)
                 new_fuel -= 1
 
-                if a == 0:
-                    new_row = min(row + 1, nR - 1)
-                elif a == 1:
-                    new_row = max(row - 1, 0)
-                elif a == 2 and self.desc[1 + row, 2 * col + 2] == b":":
+                if a == 0 and self.desc[1 + row, 2 * col + 2] == b":":
                     new_col = min(col + 1, nC - 1)
-                elif a == 3 and self.desc[1 + row, 2 * col] == b":":
+                elif a == 1 and self.desc[1 + row, 2 * col] == b":":
                     new_col = max(col - 1, 0)
-                elif a == 4:  # pickup
-                    if pass_idx < 3 and taxiloc == locs[pass_idx]:
-                        new_pass_idx = 3
+                elif a == 2:  # pickup
+                    if pass_idx < nP and taxiloc == locs[pass_idx]:
+                        new_pass_idx = nP
                     else:
                         reward = -10
-                elif a == 5:  # dropoff
-                    if (taxiloc == locs[dest_idx]) and pass_idx == 3:
+                elif a == 3:  # dropoff
+                    if (taxiloc == locs[dest_idx]) and pass_idx == nP:
                         new_pass_idx = dest_idx
                         done = True
                         reward = 20
-                    elif (taxiloc in locs) and pass_idx == 3:
+                    elif (taxiloc in locs) and pass_idx == nP:
                         new_pass_idx = locs.index(taxiloc)
                     else:
                         reward = -10
-                elif a == 6:  # refuel
+                elif a == 4:  # refuel
                     if taxiloc == self.fuel_location:
                         new_fuel = self.fuel_capacity - 1
                     else:
@@ -174,9 +180,9 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
         i = taxirow
         i *= self.nC
         i += taxicol
-        i *= (len(self.locs) + 1)
+        i *= (self.nP + 1)
         i += passloc
-        i *= (len(self.locs))
+        i *= (self.nP)
         i += destidx
         i *= self.fuel_capacity
         i += fuel
@@ -185,10 +191,10 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
     def decode(self, i):
         out = [i % self.fuel_capacity]
         i = i // self.fuel_capacity
-        out.append(i % len(self.locs))
-        i = i // len(self.locs)
-        out.append(i % (len(self.locs) + 1))
-        i = i // (len(self.locs) + 1)
+        out.append(i % self.nP)
+        i = i // self.nP
+        out.append(i % (self.nP + 1))
+        i = i // (self.nP + 1)
         out.append(i % self.nC)
         i = i // self.nC
         out.append(i)
@@ -221,7 +227,7 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
         outfile.write("\n".join(["".join(row) for row in out]) + "\n")
 
         if self.lastaction is not None:
-            action_names = ["South", "North", "East", "West", "Pickup", "Dropoff", "Refuel"]
+            action_names = ["East", "West", "Pickup", "Dropoff", "Refuel"]
             outfile.write("{}  ({})\n".format(fuelidx, action_names[self.lastaction]))
         else:
             outfile.write("\n\n")
