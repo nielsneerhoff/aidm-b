@@ -80,6 +80,8 @@ class Metrics:
 
         self.cumulative_instantaneous_loss = np.zeros((NO_RUNS, MAX_EPISODES))
 
+        self.state_action_count = np.zeros((NO_RUNS, self.env.nS, self.env.nA))
+
     def __str__(self):
         '''
         String representation of the object
@@ -123,6 +125,9 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         # updates cumulative reward
         self.__update_cumulative_reward(run, step, reward)
+
+        # updates state-action counter
+        self.__update_state_action_count(run, state, action)
         
         # updates history of rewards and standard deviation of rewards
         self.__update_std_reward(run, state, action, reward)
@@ -267,6 +272,14 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
             self.cumulative_rewards[run, step] = reward + self.cumulative_rewards[run, step-1]
 
 
+    def __update_state_action_count(self, run, state, action):
+        '''
+        Update state action counter for heatmap
+
+        '''
+        self.state_action_count[run, state, action] += 1
+
+
     def __update_std_reward(self, run, state, action, reward):
         '''
         Update standard deviation of reward.
@@ -351,15 +364,16 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
     # Variable name : Headers           Var name must be exact match excl. 'self.'
     # First header is the index, others will be prefixed with agent name
     mean_metrics = {
-        'runtime' : ['episode', 'runtime'],
-        'cumulative_rewards' : ['episode', 'reward'],
-        'reward_timeline' : ['episode', 'reward'],
-        # 'KL_divergence_T_sum' : ['episode', 'KL_div_T_sum'],
-        # 'KL_divergence_R_sum' : ['episode', 'KL_div_R_sum'],
-        'coverage_error_squared_T' : ['episode', 'cov_err_sq_T'],
-        'coverage_error_squared_R' : ['episode', 'cov_err_sq_R'],
-        'instantaneous_loss' : ['episode', 'inst_loss'],
-        'cumulative_instantaneous_loss' : ['episode', 'cum_inst_loss']
+        'runtime' : ['step', 'runtime'],
+        'cumulative_rewards' : ['step', 'reward'],
+        'state_action_count' : ['step', 'count'],
+        'reward_timeline' : ['step', 'reward'],
+        # 'KL_divergence_T_sum' : ['step', 'KL_div_T_sum'],
+        # 'KL_divergence_R_sum' : ['step', 'KL_div_R_sum'],
+        'coverage_error_squared_T' : ['step', 'cov_err_sq_T'],
+        'coverage_error_squared_R' : ['step', 'cov_err_sq_R'],
+        'instantaneous_loss' : ['step', 'inst_loss'],
+        'cumulative_instantaneous_loss' : ['step', 'cum_inst_loss']
     }
 
     single_metrics = {
