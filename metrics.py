@@ -136,7 +136,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         self.__update_coverage_error_squared(run, step)
 
         # updates KL divergence metric for transitions and rewards
-        self.__update_KL_divergence(run, step, state, action)
+        # self.__update_KL_divergence(run, step, state, action)
 
         # updates max policy of agent
         self.__update_max_policy_agent(run)
@@ -371,7 +371,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
         # 'KL_divergence_T_sum' : ['step', 'KL_div_T_sum'],
         # 'KL_divergence_R_sum' : ['step', 'KL_div_R_sum'],
         'coverage_error_squared_T' : ['step', 'cov_err_sq_T'],
-        'coverage_error_squared_R' : ['step', 'cov_err_sq_R'],
+        # 'coverage_error_squared_R' : ['step', 'cov_err_sq_R'],
         'instantaneous_loss' : ['step', 'inst_loss'],
         'cumulative_instantaneous_loss' : ['step', 'cum_inst_loss']
     }
@@ -408,9 +408,9 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
         with open(filename, "w") as f:
             f.write(header + '\n')
             for i in range(len(getattr(list_of_metric_objects[0], metric)[0])):
-                data = '\t\t'.join(f'{round(np.mean(getattr(obj, metric), axis=0)[i], 5)}\t\t' + \
-                    f'{round(np.mean(getattr(obj, metric), axis=0)[i] + np.std(getattr(obj, metric), axis=0)[i], 5)}\t\t' + \
-                        f'{round(np.mean(getattr(obj, metric), axis=0)[i] - np.std(getattr(obj, metric), axis=0)[i], 5)}' \
+                data = '\t\t'.join(f'{np.round(np.mean(getattr(obj, metric), axis=0)[i], 5)}\t\t' + \
+                    f'{np.round(np.mean(getattr(obj, metric), axis=0)[i] + np.std(getattr(obj, metric), axis=0)[i], 5)}\t\t' + \
+                        f'{np.round(np.mean(getattr(obj, metric), axis=0)[i] - np.std(getattr(obj, metric), axis=0)[i], 5)}' \
                             for obj in list_of_metric_objects)
                 f.write(f'{i+1}\t\t{data}\n')
         f.close()
@@ -430,7 +430,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
         with open(filename, "w") as f:
             f.write(header + '\n')
             for i in range(len(getattr(list_of_metric_objects[0], metric))):
-                data = '\t\t'.join(f'{round(getattr(obj, metric)[i], 5)}' \
+                data = '\t\t'.join(f'{np.round(getattr(obj, metric)[i], 5)}' \
                     for obj in list_of_metric_objects)
                 f.write(f'{i+1}\t\t{data}\n')
         f.close()
