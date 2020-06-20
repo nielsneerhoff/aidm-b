@@ -1,12 +1,12 @@
 import numpy as np
 
 MAX_ITERATIONS = 10000
-MAX_EPISODES = 500
+MAX_EPISODES = 250
 NO_RUNS = 5
 GAMMA = 0.95
 DELTA = 0.01
 
-DELTA_T = 0.20
+DELTA_T = 0.99999
 DELTA_R = 0.05
 
 def BETA(reward_range, nS, nA, m):

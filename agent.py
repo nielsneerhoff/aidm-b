@@ -148,7 +148,7 @@ class MBIE(ModelBasedLearner):
         T = np.array(self.T[state][action])
         next_states = np.argsort(np.max(self.Q_opt, axis = 1))
         desired_next_state = next_states[-1]
-        
+
         # Add epsilon_t to most desired state, remove from others.
         epsilon_t = self.epsilon_t(state, action)
         left_to_remove = np.minimum(
@@ -403,10 +403,13 @@ class Mediator(MBIE):
         epsilon_t = self.epsilon_t(state, action)
         T[desired_next_state] = min(
             T_mean[desired_next_state] + epsilon_t / 2, # Within CI.
-            T_high[desired_next_state])                 # Within expert bounds.
+            T_high[desired_next_state],                 # Within expert bounds.
+            np.sum(amount_removable))
 
         next_index = 0
         while np.sum(T) > 1:
+            if next_index >= self.nS:
+                print('Here')
             min_next_state = next_states[next_index]
             to_remove = min(
                 amount_removable[min_next_state], np.sum(T) - 1)
