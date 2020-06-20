@@ -11,24 +11,23 @@ from main import learn_online
 
 # Initialize problem env.
 env = gym.make("gym_factored:river-swim-v0")
-
 R = expected_rewards(env) # Assume we have perfect knowledge of R.
 
 ####################### MBIE-EB #########################
 m = MAX_EPISODES # Model size could be infinite.
 beta = BETA(env.reward_range, env.nS, env.nA, m)
-mbie = MBIE(env.nS, env.nA, m, R)
-metrics = Metrics(mbie, env, 'mbie')
-learn_online(env, mbie, metrics)
-write_metrics_to_file(
-    [metrics], 'mbie')
 
-mbie_eb = MBIE_EB(env.nS, env.nA, m, R)
-metrics = Metrics(mbie, env, 'mbie-eb')
-learn_online(env, mbie_eb, metrics)
-write_metrics_to_file(
-    [metrics], 'mbie-eb')
+# mbie = MBIE(env.nS, env.nA, m, R)
+# metrics = Metrics(mbie, env, 'mbie')
+# learn_online(env, mbie, metrics)
+# write_metrics_to_file(
+#     [metrics], 'river-swim', 'mbie')
 
+# mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, R)
+# metrics = Metrics(mbie_eb, env, 'mbie-eb')
+# learn_online(env, mbie_eb, metrics)
+# write_metrics_to_file(
+#     [metrics], 'river-swim', 'mbie-eb')
 #########################################################
 
 ####################### Mediator ########################
@@ -45,7 +44,8 @@ for offset in offsets:
             mediator_max_opt, env, 'mediator-max-opt')
         learn_online(env, mediator_max_opt, metrics)
         write_metrics_to_file(
-            [metrics], f'results/mediator-max-opt-{offset}-{rho}')
+            [metrics], 'river-swim/mediator-max-opt',
+            prefix = f'mediator-max-opt-{offset}-{rho}')
 
         # Random mediator.
         mediator_random = Mediator(
@@ -54,6 +54,6 @@ for offset in offsets:
             mediator_max_opt, env, 'mediator-random')
         learn_online(env, mediator_random, metrics)
         write_metrics_to_file(
-            [metrics], f'results/mediator-random-{offset}-{rho}')
-
+            [metrics], 'river-swim/mediator-random',
+            prefix = f'mediator-random-{offset}-{rho}')
 #########################################################

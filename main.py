@@ -10,6 +10,7 @@ from experts import SimpleTaxiExpert
 
 def learn_online(env, agent, metrics):
     for run in range(NO_RUNS):
+        print(agent, run)
         agent.reset()
         state = env.reset()
         state = 1
@@ -17,7 +18,7 @@ def learn_online(env, agent, metrics):
         for i in range(MAX_EPISODES):
             action = agent.select_action(state)
             new_state, reward, _, _ = env.step(action)
-            print(state, action, new_state)
+            # print(state, action, new_state)
             agent.process_experience(
                 state, action, new_state)
             metrics.update_metrics(run, state, action, reward, i)
