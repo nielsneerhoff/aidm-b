@@ -8,10 +8,11 @@ from gym.envs.toy_text import discrete
 import numpy as np
 
 MAPS = {
-    "1x3": [
-        "+-----+",
-        "|B:R:G|",
-        "+-----+",
+    "2x2": [
+        "+---+",
+        "|R:G|",
+        "|Y:B|",
+        "+---+",
     ],
     "5x5": [
         "+---------+",
@@ -96,13 +97,13 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
     """
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, fuel_capacity=3, map_name="1x3"):
+    def __init__(self, fuel_capacity=6, map_name="2x2"):
         assert map_name in MAPS.keys(), "invalid map_name.\nValid names: {}".format(", ".join(MAPS.keys()))
         self.desc = np.asarray(MAPS[map_name], dtype='c')
 
-        self.locs = locs = [(0, 0), (0, 1), (0, 2)]
+        self.locs = locs = [(0, 0), (1, 0), (0, 1), (1, 1)]
         self.fuel_capacity = fuel_capacity
-        self.fuel_location = (0, 1)
+        self.fuel_location = (1, 1)
 
         nR, nC = map_name.split('x')
         self.nR, self.nC = nR, nC = int(nR), int(nC)
@@ -114,7 +115,7 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
         P = {s: {a: [] for a in range(nA)} for s in range(nS)}
         for state in range(nS):
             row, col, pass_idx, dest_idx, fuel = self.decode(state)
-            if pass_idx < 3 and pass_idx != dest_idx and fuel >= min_starting_fuel:
+            if pass_idx < 4 and pass_idx != dest_idx and fuel >= min_starting_fuel:
                 isd[state] += 1
             for a in range(nA):
                 new_row, new_col, new_pass_idx, new_fuel = row, col, pass_idx, fuel
@@ -132,16 +133,16 @@ class TaxiFuelEnv(discrete.DiscreteEnv):
                 elif a == 3 and self.desc[1 + row, 2 * col] == b":":
                     new_col = max(col - 1, 0)
                 elif a == 4:  # pickup
-                    if pass_idx < 3 and taxiloc == locs[pass_idx]:
-                        new_pass_idx = 3
+                    if pass_idx < 4 and taxiloc == locs[pass_idx]:
+                        new_pass_idx = 4
                     else:
                         reward = -10
                 elif a == 5:  # dropoff
-                    if (taxiloc == locs[dest_idx]) and pass_idx == 3:
+                    if (taxiloc == locs[dest_idx]) and pass_idx == 4:
                         new_pass_idx = dest_idx
                         done = True
                         reward = 20
-                    elif (taxiloc in locs) and pass_idx == 3:
+                    elif (taxiloc in locs) and pass_idx == 4:
                         new_pass_idx = locs.index(taxiloc)
                     else:
                         reward = -10
