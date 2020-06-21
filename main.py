@@ -10,7 +10,6 @@ from experts import SimpleTaxiExpert
 
 def learn_online(env, agent, metrics):
     for run in range(NO_RUNS):
-        print(agent, run)
         agent.reset()
         state = env.reset()
         state = 1

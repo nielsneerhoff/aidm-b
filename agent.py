@@ -7,6 +7,7 @@ from pseudo_env import HighLowModel
 
 from utils import GAMMA, DELTA_R, DELTA_T, MAX_ITERATIONS, DELTA, MAX_EPISODES
 
+ONE = np.float32(1.0001)
 
 class ModelBasedLearner:
     def __init__(self, nS, nA, m, R):
@@ -368,7 +369,7 @@ class Mediator(MBIE):
             T_high[desired_next_state])                 # Within expert bounds.
 
         next_index = 0
-        while np.sum(T) > 1:
+        while np.sum(T) > ONE:
             min_next_state = next_states[next_index]
             to_remove = min(
                 amount_removable[min_next_state], np.sum(T) - 1)
@@ -407,9 +408,11 @@ class Mediator(MBIE):
             np.sum(amount_removable))
 
         next_index = 0
-        while np.sum(T) > 1:
+        while np.sum(T) > ONE:
             if next_index >= self.nS:
-                print('Here')
+                print(np.sum(T))
+                print(state, action, T)
+                print('Bug!')
             min_next_state = next_states[next_index]
             to_remove = min(
                 amount_removable[min_next_state], np.sum(T) - 1)

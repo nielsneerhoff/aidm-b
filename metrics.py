@@ -367,7 +367,7 @@ def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
         'runtime' : ['step', 'runtime'],
         'cumulative_rewards' : ['step', 'reward'],
         'state_action_count' : ['step', 'count'],
-        'reward_timeline' : ['step', 'reward'],
+        # 'reward_timeline' : ['step', 'reward'],
         # 'KL_divergence_T_sum' : ['step', 'KL_div_T_sum'],
         # 'KL_divergence_R_sum' : ['step', 'KL_div_R_sum'],
         'coverage_error_squared_T' : ['step', 'cov_err_sq_T'],

@@ -20,7 +20,7 @@ beta = BETA(env.reward_range, env.nS, env.nA, m)
 
 
 rho = 0.16
-offset = 0.3
+offset = 0.1
 expert_model = OffsetModel.from_env(env, offset)
 
 # Max-opt mediator.

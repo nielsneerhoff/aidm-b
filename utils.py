@@ -6,7 +6,7 @@ NO_RUNS = 5
 GAMMA = 0.95
 DELTA = 0.01
 
-DELTA_T = 0.99999
+DELTA_T = 0.20
 DELTA_R = 0.05
 
 def BETA(reward_range, nS, nA, m):
