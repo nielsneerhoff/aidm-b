@@ -15,20 +15,20 @@ env = gym.make("gym_factored:simpletaxi-v0")
 R = expected_rewards(env) # Assume we have perfect knowledge of R.
 
 ####################### MBIE-EB #########################
-# m = MAX_EPISODES # Model size could be infinite.
-# beta = BETA(env.reward_range, env.nS, env.nA, m)
+m = MAX_EPISODES # Model size could be infinite.
+beta = BETA(env.reward_range, env.nS, env.nA, m)
 
-# mbie = MBIE(env.nS, env.nA, m, R)
-# metrics = Metrics(mbie, env, 'mbie')
-# learn_online(env, mbie, metrics)
-# write_metrics_to_file(
-#     [metrics], 'simple-taxi', 'mbie')
+mbie = MBIE(env.nS, env.nA, m, R)
+metrics = Metrics(mbie, env, 'mbie')
+learn_online(env, mbie, metrics)
+write_metrics_to_file(
+    [metrics], 'simple-taxi', 'mbie')
 
-# mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, R)
-# metrics = Metrics(mbie_eb, env, 'mbie-eb')
-# learn_online(env, mbie_eb, metrics)
-# write_metrics_to_file(
-#     [metrics], 'simple-taxi', 'mbie-eb')
+mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, R)
+metrics = Metrics(mbie_eb, env, 'mbie-eb')
+learn_online(env, mbie_eb, metrics)
+write_metrics_to_file(
+    [metrics], 'simple-taxi', 'mbie-eb')
 ########################################################
 
 ####################### Mediator ########################

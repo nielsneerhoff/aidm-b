@@ -281,7 +281,7 @@ class Mediator(MBIE):
         """
 
         pessimistic_q = self.Q_pes[state].max()
-        safe_actions = self.Q_pes[state] > (1 - self.rho) * pessimistic_q
+        safe_actions = self.Q_pes[state] >= (1 - self.rho) * pessimistic_q
 
         # Return a random safe action within bounds.
         if self.safe_action_mode == 'random':
