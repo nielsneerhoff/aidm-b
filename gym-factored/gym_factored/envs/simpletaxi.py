@@ -33,6 +33,7 @@ class SimpleTaxi(DiscreteEnv):
                     p[s][a].append((transition_prob, new_state, reward, done))
         isd /= isd.sum()
         DiscreteEnv.__init__(self, ns, na, p, isd)
+
     def get_transition_function(self, na, ns):
         t = np.zeros((ns, na, ns))
 
