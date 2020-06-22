@@ -33,8 +33,8 @@ R = expected_rewards(env) # Assume we have perfect knowledge of R.
 
 ####################### Mediator ########################
 # offsets = [0, 0.1, 0.2, 0.3, 0.5, 1] # Niemand runnen, complete.
-# offsets = [0, 0.1] # Maarten
-offsets = [0.2, 0.3] # Niels
+offsets = [0, 0.1] # Maarten
+# offsets = [0.2, 0.3] # Niels
 # offsets = [0.5, 1] # Erik
 for offset in offsets:
     expert_model = OffsetModel.from_env(env, offset)
