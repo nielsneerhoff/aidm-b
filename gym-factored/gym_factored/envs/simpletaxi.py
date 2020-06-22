@@ -38,22 +38,20 @@ class SimpleTaxi(DiscreteEnv):
         t = np.zeros((ns, na, ns))
 
         #State 0
-        t[0, ACTION0, 1] = 0.75
-        t[0, ACTION0, 0] = 0.25
-        t[0, ACTION1, 2] = 0.70
-        t[0, ACTION1, 0] = 0.30
-        t[0, ACTION2, 3] = 0.8
-        t[0, ACTION2, 0] = 0.2
+        t[0, ACTION0, 1] = 0.15
+        t[0, ACTION0, 0] = 0.85
+        t[0, ACTION1, 2] = 0.10
+        t[0, ACTION1, 0] = 0.90
+        t[0, ACTION2, 3] = 0.05
+        t[0, ACTION2, 0] = 0.95
         t[0, ACTION3, 4] = 1
-
 
         #State 1
         t[1, ACTION0, 0] = 1
         t[1, ACTION1, 0] = 1
         t[1, ACTION2, 0] = 1
         t[1, ACTION3, 0] = 1
-       
-   
+
         #State 2
         t[2, ACTION0, 0] = 1
         t[2, ACTION1, 0] = 1
@@ -68,35 +66,33 @@ class SimpleTaxi(DiscreteEnv):
 
         #State 4
         t[4, ACTION0, 0] = 1
-        t[4, ACTION1, 0] = 1
-        t[4, ACTION2, 0] = 1
-        t[4, ACTION3, 0] = 1
-
+        t[4, ACTION1, 4] = 1
+        t[4, ACTION2, 4] = 1
+        t[4, ACTION3, 4] = 1
 
         return t
 
     def get_reward_function(self, na, ns):
         r = np.zeros((ns, na, ns))
 
+        r[0, ACTION0, 1] = -1
+        r[0, ACTION0, 0] = -1
+        r[0, ACTION1, 2] = -1
+        r[0, ACTION1, 0] = -1
+        r[0, ACTION2, 3] = -1
+        r[0, ACTION2, 0] = -1
+        r[0, ACTION3, 4] = -1
 
-        r[0, ACTION0, 1] = 0
-        r[0, ACTION0, 0] = 0
-        r[0, ACTION1, 2] = 0
-        r[0, ACTION1, 0] = 0
-        r[0, ACTION2, 3] = 0
-        r[0, ACTION2, 0] = 0
-        r[0, ACTION3, 4] = 0
-
-        #self-loops
+        # Self-loops
         r[1, ACTION0, 0] = 50
         r[2, ACTION1, 0] = 100
         r[3, ACTION2, 0] = 150
 
         #State 4
         r[4, ACTION0, 0] = -150
-        r[4, ACTION1, 0] = -150
-        r[4, ACTION2, 0] = -150
-        r[4, ACTION3, 0] = -150
+        r[4, ACTION1, 4] = -150
+        r[4, ACTION2, 4] = -150
+        r[4, ACTION3, 4] = -150
 
         return r
 
