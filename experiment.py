@@ -10,28 +10,28 @@ from experts import SimpleTaxiExpert
 from main import learn_online
 
 # Initialize problem env.
-env = gym.make("gym_factored:river-swim-v0")
+env = gym.make("gym_factored:sixarms-v0")
 R = expected_rewards(env) # Assume we have perfect knowledge of R.
 
 ####################### MBIE-EB #########################
-m = MAX_EPISODES # Model size could be infinite.
-beta = BETA(env.reward_range, env.nS, env.nA, m)
+# m = MAX_EPISODES # Model size could be infinite.
+# beta = BETA(env.reward_range, env.nS, env.nA, m)
 
 # mbie = MBIE(env.nS, env.nA, m, R)
 # metrics = Metrics(mbie, env, 'mbie')
 # learn_online(env, mbie, metrics)
 # write_metrics_to_file(
-#     [metrics], 'river-swim', 'mbie')
+#     [metrics], 'six-arms', 'mbie')
 
 # mbie_eb = MBIE_EB(env.nS, env.nA, m, beta, R)
 # metrics = Metrics(mbie_eb, env, 'mbie-eb')
 # learn_online(env, mbie_eb, metrics)
 # write_metrics_to_file(
-#     [metrics], 'river-swim', 'mbie-eb')
-#########################################################
+#     [metrics], 'six-arms', 'mbie-eb')
+########################################################
 
 ####################### Mediator ########################
-offsets = [0, 0.1, 0.2, 0.3, 0.5, 1] # TODO: Runnen voor offset = 1
+offsets = [0, 0.1, 0.2, 0.3, 0.5]
 for offset in offsets:
     expert_model = OffsetModel.from_env(env, offset)
     rhos = [0.02, 0.04, 0.08, 0.16, 0.32]
@@ -44,7 +44,7 @@ for offset in offsets:
             mediator_max_opt, env, 'mediator-max-opt')
         learn_online(env, mediator_max_opt, metrics)
         write_metrics_to_file(
-            [metrics], 'river-swim/mediator-max-opt',
+            [metrics], 'six-arms/mediator-max-opt',
             prefix = f'mediator-max-opt-{offset}-{rho}')
 
         # Random mediator.
@@ -54,6 +54,6 @@ for offset in offsets:
             mediator_max_opt, env, 'mediator-random')
         learn_online(env, mediator_random, metrics)
         write_metrics_to_file(
-            [metrics], 'river-swim/mediator-random',
+            [metrics], 'six-arms/mediator-random',
             prefix = f'mediator-random-{offset}-{rho}')
 #########################################################
