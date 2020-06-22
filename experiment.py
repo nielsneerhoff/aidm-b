@@ -42,6 +42,7 @@ for offset in offsets:
     for rho in rhos:
 
         print(offset, rho)
+
         # Max-opt mediator.
         mediator_max_opt = Mediator(
             expert_model, rho, safe_action_mode = 'max-opt')
@@ -56,7 +57,7 @@ for offset in offsets:
         mediator_random = Mediator(
             expert_model, rho, safe_action_mode = 'random')
         metrics = Metrics(
-            mediator_max_opt, env, 'mediator-random')
+            mediator_random, env, 'mediator-random')
         learn_online(env, mediator_random, metrics)
         write_metrics_to_file(
             [metrics], 'simple-taxi/mediator-random',

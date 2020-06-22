@@ -115,14 +115,15 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         Return runtime up until now.
 
         '''
+
         return round(time.time() - self.start_time[run], 5)
 
-    
     def update_metrics(self, run, state, action, reward, step):
         '''
         Update from experience.
 
         '''
+
         # updates cumulative reward
         self.__update_cumulative_reward(run, step, reward)
 
@@ -185,9 +186,7 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         for i in range(1, MAX_EPISODES):
             self.cumulative_instantaneous_loss[run, i] = self.instantaneous_loss[run, i] + self.cumulative_instantaneous_loss[run, i - 1]
 
-        
     ### ''' Private Initializer Methods ''' ###
-            
 
     def __get_transition_function(self):
         '''
@@ -249,10 +248,8 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
             if np.sum(np.abs(Q_old - Q_new)) < delta:
                 return Q_new
             Q_old = Q_new
-        
 
     ### ''' Private Updater Methods ''' ###
-
 
     def __update_runtime(self, run, step):
         '''
@@ -351,7 +348,6 @@ Hit zero sample complexity after {self.zero_sample_complexity_steps} steps'''
         '''
         self.reward_timeline[run, step] = reward
         self.state_timeline[run, step] = state
-
 
 def write_metrics_to_file(list_of_metric_objects, directory, prefix=''):
     '''
