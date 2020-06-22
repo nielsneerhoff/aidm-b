@@ -14,6 +14,8 @@ from audioop import reverse
 env = gym.make("gym_factored:simpletaxi-v0")
 R = expected_rewards(env) # Assume we have perfect knowledge of R.
 
+# Nog te doen: river-swim, random opnieuw runnen.
+
 ####################### MBIE-EB #########################
 # m = MAX_EPISODES # Model size could be infinite.
 # beta = BETA(env.reward_range, env.nS, env.nA, m)
@@ -32,10 +34,7 @@ R = expected_rewards(env) # Assume we have perfect knowledge of R.
 ########################################################
 
 ####################### Mediator ########################
-# offsets = [0, 0.1, 0.2] # Maarten
-# offsets = [0.3, 0.5, 1] # Niels
-offsets = [0.3, 0.5, 1]
-
+offsets = [0, 0.1, 0.2]
 for offset in offsets:
     expert_model = OffsetModel.from_env(env, offset)
     rhos = [0.02, 0.04, 0.08, 0.16, 0.32]
@@ -43,7 +42,7 @@ for offset in offsets:
 
         print(offset, rho)
 
-        # # Max-opt mediator.
+        # Max-opt mediator.
         mediator_max_opt = Mediator(
             expert_model, rho, safe_action_mode = 'max-opt')
         metrics = Metrics(
@@ -53,13 +52,13 @@ for offset in offsets:
             [metrics], 'simple-taxi/mediator-max-opt',
             prefix = f'mediator-max-opt-{offset}-{rho}')
 
-        # Random mediator.
-        mediator_random = Mediator(
-            expert_model, rho, safe_action_mode = 'random')
-        metrics = Metrics(
-            mediator_random, env, 'mediator-random')
-        learn_online(env, mediator_random, metrics)
-        write_metrics_to_file(
-            [metrics], 'simple-taxi/mediator-random',
-            prefix = f'mediator-random-{offset}-{rho}')
+        # # Random mediator.
+        # mediator_random = Mediator(
+        #     expert_model, rho, safe_action_mode = 'random')
+        # metrics = Metrics(
+        #     mediator_random, env, 'mediator-random')
+        # learn_online(env, mediator_random, metrics)
+        # write_metrics_to_file(
+        #     [metrics], 'simple-taxi/mediator-random',
+        #     prefix = f'mediator-random-{offset}-{rho}')
 #########################################################
