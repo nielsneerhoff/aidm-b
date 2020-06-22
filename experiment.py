@@ -43,22 +43,22 @@ for offset in offsets:
         print(offset, rho)
 
         # Max-opt mediator.
-        # mediator_max_opt = Mediator(
-        #     expert_model, rho, safe_action_mode = 'max-opt')
-        # metrics = Metrics(
-        #     mediator_max_opt, env, 'mediator-max-opt')
-        # learn_online(env, mediator_max_opt, metrics)
-        # write_metrics_to_file(
-        #     [metrics], 'simple-taxi/mediator-max-opt',
-        #     prefix = f'mediator-max-opt-{offset}-{rho}')
-
-        # Random mediator.
-        mediator_random = Mediator(
-            expert_model, rho, safe_action_mode = 'random')
+        mediator_max_opt = Mediator(
+            expert_model, rho, safe_action_mode = 'max-opt')
         metrics = Metrics(
-            mediator_random, env, 'mediator-random')
-        learn_online(env, mediator_random, metrics)
+            mediator_max_opt, env, 'mediator-max-opt')
+        learn_online(env, mediator_max_opt, metrics)
         write_metrics_to_file(
-            [metrics], 'simple-taxi/mediator-random',
-            prefix = f'mediator-random-{offset}-{rho}')
+            [metrics], 'simple-taxi/mediator-max-opt',
+            prefix = f'mediator-max-opt-{offset}-{rho}')
+
+        # # Random mediator.
+        # mediator_random = Mediator(
+        #     expert_model, rho, safe_action_mode = 'random')
+        # metrics = Metrics(
+        #     mediator_random, env, 'mediator-random')
+        # learn_online(env, mediator_random, metrics)
+        # write_metrics_to_file(
+        #     [metrics], 'simple-taxi/mediator-random',
+        #     prefix = f'mediator-random-{offset}-{rho}')
 #########################################################
