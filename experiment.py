@@ -32,7 +32,10 @@ write_metrics_to_file(
 ########################################################
 
 ####################### Mediator ########################
-offsets = [0, 0.1, 0.2, 0.3, 0.5, 1]
+# offsets = [0, 0.1, 0.2, 0.3, 0.5, 1] # Niemand runnen, complete.
+offsets = [0, 0.1] # Maarten
+# offsets = [0.2, 0.3] # Niels
+# offsets = [0.5, 1] # Erik
 for offset in offsets:
     expert_model = OffsetModel.from_env(env, offset)
     rhos = [0.02, 0.04, 0.08, 0.16, 0.32]
